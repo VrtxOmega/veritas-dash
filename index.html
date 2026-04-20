@@ -3,19 +3,20 @@
   <head>
     <meta charset="UTF-8" />
     <link rel="icon" type="image/svg+xml" href="/vite.svg" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
     <title>Sovereign Dash | VERITAS Budget</title>
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link
-      href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700&display=swap"
+      href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&family=Inter:wght@400;500;600&display=swap"
       rel="stylesheet"
     />
     <link rel="stylesheet" href="./style.css" />
   </head>
   <body class="dark-theme">
     <div class="app-container">
-      <header class="top-nav glass-panel">
+      <!-- Minimal Header -->
+      <header class="top-nav">
         <div class="logo">
           <span class="logo-mark">Ω</span>
           <span class="logo-text">Sovereign Dash</span>
@@ -23,123 +24,143 @@
         <div class="date-display" id="dateDisplay"></div>
       </header>
 
-      <main class="dashboard-grid">
-        <!-- Goal Overview Section -->
-        <section class="panel glass-panel summary-section">
-          <h2>Shift Objective</h2>
-          <div class="goals-container">
-            <div class="goal-card">
-              <h3>Daily Goal</h3>
-              <div class="amount" id="dailyGoalDisplay">$0.00</div>
-            </div>
-            <div class="goal-card">
-              <h3>Weekly Goal</h3>
-              <div class="amount" id="weeklyGoalDisplay">$0.00</div>
+      <main class="dashboard-content">
+        <!-- Hero: Progress Ring -->
+        <section class="hero-section glass-panel">
+          <div class="progress-ring-container">
+            <svg class="progress-ring" viewBox="0 0 200 200">
+              <circle class="ring-bg" cx="100" cy="100" r="85"></circle>
+              <circle class="ring-fill" id="progressRingFill" cx="100" cy="100" r="85" transform="rotate(-90 100 100)"></circle>
+            </svg>
+            <div class="ring-content">
+              <span class="ring-label">Net Profit</span>
+              <span class="ring-value" id="netProfit">$0.00</span>
+              <span class="ring-sub" id="dailyProgressText">0% of Goal</span>
             </div>
           </div>
-          <div class="progress-container">
-            <div class="progress-info">
-              <span>Today's Progress</span>
-              <span id="dailyProgressText">0%</span>
+          <div class="hero-stats">
+            <div class="stat-pill">
+              <span class="stat-label">To Reach Goal</span>
+              <span class="stat-value highlight" id="remainingToGoal">$0.00</span>
             </div>
-            <div class="progress-bar-bg">
-              <div class="progress-bar-fill" id="dailyProgressBar"></div>
+            <div class="stat-pill">
+              <span class="stat-label">Daily Goal</span>
+              <span class="stat-value" id="dailyGoalDisplay">$0.00</span>
             </div>
           </div>
         </section>
 
-        <!-- Current Status Section -->
-        <section class="panel glass-panel status-section">
-          <h2>Current Status</h2>
-          <div class="status-grid">
-            <div class="status-item positive">
-              <span class="label">Gross Earnings</span>
+        <!-- Quick Stats Row -->
+        <section class="quick-stats">
+          <div class="stat-card positive glass-panel">
+            <div class="icon">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"></polyline><polyline points="17 6 23 6 23 12"></polyline></svg>
+            </div>
+            <div class="stat-info">
+              <span class="label">Gross</span>
               <span class="value" id="grossEarnings">$0.00</span>
             </div>
-            <div class="status-item negative">
-              <span class="label">Shift Expenses (Gas, etc.)</span>
+          </div>
+          <div class="stat-card negative glass-panel">
+            <div class="icon">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polygon></svg>
+            </div>
+            <div class="stat-info">
+              <span class="label">Gas/Exp</span>
               <span class="value" id="shiftExpenses">$0.00</span>
             </div>
-            <div class="status-item negative">
-              <span class="label">Allocated Bills</span>
+          </div>
+          <div class="stat-card neutral glass-panel">
+            <div class="icon">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="4" width="20" height="16" rx="2"></rect><line x1="2" y1="10" x2="22" y2="10"></line></svg>
+            </div>
+            <div class="stat-info">
+              <span class="label">Bills</span>
               <span class="value" id="allocatedBills">$0.00</span>
             </div>
-            <div class="status-item net">
-              <span class="label">Net Profit</span>
-              <span class="value" id="netProfit">$0.00</span>
-            </div>
-            <div class="status-item highlight">
-              <span class="label">To Reach Goal</span>
-              <span class="value" id="remainingToGoal">$0.00</span>
-            </div>
           </div>
         </section>
 
-        <!-- Input Actions Section -->
-        <section class="panel glass-panel action-section">
-          <h2>Ledger Entry</h2>
-          <div class="action-tabs">
-            <button class="tab-btn active" data-tab="earnings">Earnings</button>
-            <button class="tab-btn" data-tab="expenses">Expenses</button>
-            <button class="tab-btn" data-tab="settings">Goals & Bills</button>
+        <!-- Shift Log -->
+        <section class="history-section">
+          <div class="section-header">
+            <h2>Shift Log</h2>
+            <button class="settings-btn" id="openSettingsBtn" aria-label="Settings">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path></svg>
+            </button>
           </div>
-          
-          <div class="tab-content active" id="tab-earnings">
-            <form id="earningsForm" class="input-form">
-              <div class="input-group">
-                <label for="earningAmount">Amount ($)</label>
-                <input type="number" id="earningAmount" step="0.01" min="0" required />
-              </div>
-              <div class="input-group">
-                <label for="earningDesc">Description</label>
-                <input type="text" id="earningDesc" placeholder="e.g. DoorDash Shift 1" />
-              </div>
-              <button type="submit" class="btn primary-btn">Log Earning</button>
-            </form>
-          </div>
-
-          <div class="tab-content" id="tab-expenses">
-            <form id="expensesForm" class="input-form">
-              <div class="input-group">
-                <label for="expenseAmount">Amount ($)</label>
-                <input type="number" id="expenseAmount" step="0.01" min="0" required />
-              </div>
-              <div class="input-group">
-                <label for="expenseDesc">Description (Gas, Food)</label>
-                <input type="text" id="expenseDesc" placeholder="e.g. Gas" required />
-              </div>
-              <button type="submit" class="btn danger-btn">Log Expense</button>
-            </form>
-          </div>
-
-          <div class="tab-content" id="tab-settings">
-            <form id="settingsForm" class="input-form">
-              <div class="input-group">
-                <label for="setDailyGoal">Daily Goal ($)</label>
-                <input type="number" id="setDailyGoal" step="0.01" min="0" required />
-              </div>
-              <div class="input-group">
-                <label for="setWeeklyGoal">Weekly Goal ($)</label>
-                <input type="number" id="setWeeklyGoal" step="0.01" min="0" required />
-              </div>
-              <div class="input-group">
-                <label for="setDailyBills">Daily Bills Allocation ($)</label>
-                <input type="number" id="setDailyBills" step="0.01" min="0" required />
-              </div>
-              <button type="submit" class="btn secondary-btn">Save Configuration</button>
-            </form>
-          </div>
-        </section>
-
-        <!-- Transaction Log -->
-        <section class="panel glass-panel history-section">
-          <h2>Shift Log</h2>
-          <div class="transaction-list" id="transactionList">
-            <!-- Transactions will be injected here -->
-            <div class="empty-state">No entries for this shift yet.</div>
+          <div class="transaction-list glass-panel" id="transactionList">
+            <div class="empty-state">No entries yet. Time to hit the road!</div>
           </div>
         </section>
       </main>
+
+      <!-- Floating Action Button -->
+      <button class="fab" id="fabBtn">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+      </button>
+
+      <!-- Overlay -->
+      <div class="overlay" id="overlay"></div>
+
+      <!-- Action Modal (Bottom Sheet) -->
+      <div class="bottom-sheet glass-panel" id="actionModal">
+        <div class="sheet-handle"></div>
+        <h2>Add Entry</h2>
+        
+        <div class="action-tabs">
+          <button class="tab-btn active" data-tab="earnings">Earning</button>
+          <button class="tab-btn" data-tab="expenses">Expense</button>
+        </div>
+        
+        <div class="tab-content active" id="tab-earnings">
+          <form id="earningsForm" class="input-form">
+            <div class="amount-input-wrapper">
+              <span class="currency-symbol">$</span>
+              <input type="number" id="earningAmount" class="huge-input" step="0.01" min="0" placeholder="0.00" required />
+            </div>
+            <div class="input-group">
+              <input type="text" id="earningDesc" class="modern-input" placeholder="Description (e.g., DoorDash Run)" />
+            </div>
+            <button type="submit" class="btn primary-btn">Add Earning</button>
+          </form>
+        </div>
+
+        <div class="tab-content" id="tab-expenses">
+          <form id="expensesForm" class="input-form">
+            <div class="amount-input-wrapper negative-input">
+              <span class="currency-symbol">$</span>
+              <input type="number" id="expenseAmount" class="huge-input" step="0.01" min="0" placeholder="0.00" required />
+            </div>
+            <div class="input-group">
+              <input type="text" id="expenseDesc" class="modern-input" placeholder="Description (e.g., Gas, Snack)" required />
+            </div>
+            <button type="submit" class="btn danger-btn">Add Expense</button>
+          </form>
+        </div>
+      </div>
+
+      <!-- Settings Modal (Bottom Sheet) -->
+      <div class="bottom-sheet glass-panel" id="settingsModal">
+        <div class="sheet-handle"></div>
+        <h2>Shift Config</h2>
+        <form id="settingsForm" class="input-form">
+          <div class="input-group">
+            <label for="setDailyGoal">Daily Goal ($)</label>
+            <input type="number" id="setDailyGoal" class="modern-input" step="0.01" min="0" required />
+          </div>
+          <div class="input-group">
+            <label for="setWeeklyGoal">Weekly Goal ($)</label>
+            <input type="number" id="setWeeklyGoal" class="modern-input" step="0.01" min="0" required />
+          </div>
+          <div class="input-group">
+            <label for="setDailyBills">Daily Bills Allocation ($)</label>
+            <input type="number" id="setDailyBills" class="modern-input" step="0.01" min="0" required />
+          </div>
+          <button type="submit" class="btn secondary-btn">Save Configuration</button>
+        </form>
+      </div>
+
     </div>
     <script type="module" src="/main.js"></script>
   </body>
