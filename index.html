@@ -15,6 +15,7 @@
       rel="stylesheet"
     />
     <link rel="stylesheet" href="./style.css" />
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   </head>
   <body class="dark-theme">
     <!-- Confetti Canvas -->
@@ -224,6 +225,20 @@
             <div class="input-group">
               <label for="setWeeklyGoal">Weekly Goal ($)</label>
               <input type="number" id="setWeeklyGoal" class="modern-input" step="0.01" min="0" inputmode="decimal" required />
+            </div>
+          </div>
+
+          <div class="settings-divider">
+            <span>☁️ Cloud Sync</span>
+          </div>
+          <div class="settings-grid">
+            <div class="input-group">
+              <label for="syncPin">Cloud Sync PIN (e.g. 1234)</label>
+              <div style="display: flex; gap: 8px;">
+                <input type="text" id="syncPin" class="modern-input" placeholder="Create a PIN" />
+                <button type="button" id="cloudPullBtn" class="btn primary-btn" style="padding: 0 16px; min-width: 80px;">📥 Pull</button>
+              </div>
+              <small style="color: #a0a0a0; font-size: 0.8rem; margin-top: 6px; display: block;">Set a PIN to auto-save to the cloud. Click Pull to download your backup.</small>
             </div>
           </div>
           

@@ -1,5 +1,12 @@
 import './style.css'
 
+const SUPABASE_URL = 'https://xiprgjpgbsytamemoraa.supabase.co';
+const SUPABASE_KEY = 'sb_publishable_r5_04Q-bfvxQps44uXqX2g_EL_-_kFS';
+let supabase = null;
+if (window.supabase) {
+  supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+}
+
 class Dashboard {
   constructor() {
     this.state = {
@@ -15,6 +22,7 @@ class Dashboard {
     };
     
     this.confettiTriggered = false;
+    this.pushTimeout = null;
     this.loadState();
     this.initDOM();
     this.bindEvents();
@@ -35,6 +43,63 @@ class Dashboard {
   saveState() {
     localStorage.setItem('sovereign_dash_v3', JSON.stringify(this.state));
     this.updateDashboard();
+    
+    if (this.state.config && this.state.config.syncPin && supabase) {
+      if (this.pushTimeout) clearTimeout(this.pushTimeout);
+      this.pushTimeout = setTimeout(() => {
+        this.pushState(this.state.config.syncPin);
+      }, 1500);
+    }
+  }
+
+  async pushState(pin) {
+    if (!pin) return;
+    try {
+      const { error } = await supabase
+        .from('veritas_dash')
+        .upsert({ id: pin, state: this.state });
+      
+      if (error) throw error;
+      // Optional: Add a subtle visual indicator for successful auto-save
+      console.log('Cloud sync complete! ☁️✅');
+    } catch (e) {
+      console.error('Cloud sync failed', e);
+    }
+  }
+
+  async pullState(pin) {
+    if (!pin) {
+      this.showToast('Please enter a PIN first', true);
+      return;
+    }
+    
+    try {
+      this.showToast('Pulling backup... ⏳');
+      const { data, error } = await supabase
+        .from('veritas_dash')
+        .select('state')
+        .eq('id', pin)
+        .single();
+        
+      if (error) throw error;
+      
+      if (data && data.state) {
+        if (confirm('Backup found! Restore it and replace current data?')) {
+          this.state = data.state;
+          // Ensure the pin is preserved in the restored state if it wasn't there
+          if (!this.state.config) this.state.config = {};
+          this.state.config.syncPin = pin;
+          this.saveState();
+          this.initDOM(); // Re-populate inputs
+          this.showToast('Backup restored successfully! 🎉');
+        }
+      } else {
+        this.showToast('No backup found for this PIN', true);
+      }
+    } catch (e) {
+      console.error(e);
+      this.showToast('Failed to pull backup ❌', true);
+    }
   }
 
   checkUrlForBackup() {
@@ -133,6 +198,7 @@ class Dashboard {
     // Populate Settings
     document.getElementById('setDailyGoal').value = this.state.config.dailyGoal;
     document.getElementById('setWeeklyGoal').value = this.state.config.weeklyGoal;
+    document.getElementById('syncPin').value = this.state.config.syncPin || '';
     const mb = this.state.config.monthlyBills || { rent: 0, car: 0, insurance: 0, utilities: 0 };
     document.getElementById('setRent').value = mb.rent || '';
     document.getElementById('setCar').value = mb.car || '';
@@ -243,6 +309,7 @@ class Dashboard {
       e.preventDefault();
       this.state.config.dailyGoal = parseFloat(document.getElementById('setDailyGoal').value) || 0;
       this.state.config.weeklyGoal = parseFloat(document.getElementById('setWeeklyGoal').value) || 0;
+      this.state.config.syncPin = document.getElementById('syncPin').value.trim();
       const rent = parseFloat(document.getElementById('setRent').value) || 0;
       const car = parseFloat(document.getElementById('setCar').value) || 0;
       const insurance = parseFloat(document.getElementById('setInsurance').value) || 0;
@@ -253,6 +320,15 @@ class Dashboard {
       this.closeAllModals();
       this.showToast('Settings saved! ✅');
     });
+
+    // Sync Pin Pull
+    const cloudPullBtn = document.getElementById('cloudPullBtn');
+    if (cloudPullBtn) {
+      cloudPullBtn.addEventListener('click', () => {
+        const pin = document.getElementById('syncPin').value.trim();
+        this.pullState(pin);
+      });
+    }
   }
 
   updateGreeting() {
