@@ -163,6 +163,15 @@ h1, h2, h3, .logo-text, .ring-value, .stat-value { font-family: var(--font-displ
 .stat-info .label { display: block; font-size: 0.7rem; color: var(--vrts-text-muted); margin-bottom: 0.15rem; }
 .stat-info .value { display: block; font-size: 0.95rem; font-weight: 600; }
 
+/* Notes Section */
+.notes-section { margin-bottom: 1.25rem; }
+.notes-input {
+  width: 100%;
+  min-height: 120px;
+  resize: vertical;
+  padding: 1rem;
+}
+
 /* Shift Log */
 .section-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.75rem; }
 .section-header h2 { font-size: 1.15rem; font-weight: 600; }

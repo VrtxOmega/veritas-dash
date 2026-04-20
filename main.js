@@ -5,6 +5,7 @@ class Dashboard {
     this.state = {
       transactions: [],
       weeklyLog: {},
+      notes: '',
       config: {
         dailyGoal: 150.0,
         weeklyGoal: 1000.0,
@@ -63,6 +64,11 @@ class Dashboard {
     this.greetingEmoji = document.getElementById('greetingEmoji');
     this.greetingHeadline = document.getElementById('greetingHeadline');
     this.greetingSub = document.getElementById('greetingSub');
+    this.dailyNotes = document.getElementById('dailyNotes');
+
+    if (this.dailyNotes) {
+      this.dailyNotes.value = this.state.notes || '';
+    }
 
     // Populate Settings
     document.getElementById('setDailyGoal').value = this.state.config.dailyGoal;
@@ -125,6 +131,14 @@ class Dashboard {
     ['setRent', 'setCar', 'setInsurance', 'setUtilities'].forEach(id => {
       document.getElementById(id).addEventListener('input', () => this.updateComputedBillsDisplay());
     });
+
+    // Notes auto-save
+    if (this.dailyNotes) {
+      this.dailyNotes.addEventListener('input', (e) => {
+        this.state.notes = e.target.value;
+        this.saveState();
+      });
+    }
 
     // Clear Today
     this.clearTodayBtn.addEventListener('click', () => {
@@ -239,6 +253,10 @@ class Dashboard {
     const net = gross - expenses - this.state.config.dailyBills;
     this.state.weeklyLog[today] = { gross, expenses, net };
     this.state.transactions = [];
+    this.state.notes = '';
+    if (this.dailyNotes) {
+      this.dailyNotes.value = '';
+    }
     this.confettiTriggered = false;
     this.saveState();
     this.showToast('Day archived! Starting fresh 🌅');
