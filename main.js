@@ -8,6 +8,12 @@ class Dashboard {
         dailyGoal: 150.0,
         weeklyGoal: 1000.0,
         dailyBills: 20.0,
+        monthlyBills: {
+          rent: 0,
+          car: 0,
+          insurance: 0,
+          utilities: 0
+        }
       }
     };
     
@@ -67,6 +73,13 @@ class Dashboard {
     // Populate Settings Input
     document.getElementById('setDailyGoal').value = this.state.config.dailyGoal;
     document.getElementById('setWeeklyGoal').value = this.state.config.weeklyGoal;
+    
+    // Monthly Bills
+    const mb = this.state.config.monthlyBills || { rent: 0, car: 0, insurance: 0, utilities: 0 };
+    document.getElementById('setRent').value = mb.rent || '';
+    document.getElementById('setCar').value = mb.car || '';
+    document.getElementById('setInsurance').value = mb.insurance || '';
+    document.getElementById('setUtilities').value = mb.utilities || '';
     document.getElementById('setDailyBills').value = this.state.config.dailyBills;
   }
 
@@ -94,6 +107,21 @@ class Dashboard {
       });
     });
 
+    // Auto-calculate Daily Bills on input change
+    const updateDailyBillsDisplay = () => {
+      const rent = parseFloat(document.getElementById('setRent').value) || 0;
+      const car = parseFloat(document.getElementById('setCar').value) || 0;
+      const ins = parseFloat(document.getElementById('setInsurance').value) || 0;
+      const util = parseFloat(document.getElementById('setUtilities').value) || 0;
+      const totalMonthly = rent + car + ins + util;
+      const daily = totalMonthly / 30;
+      document.getElementById('setDailyBills').value = daily.toFixed(2);
+    };
+
+    ['setRent', 'setCar', 'setInsurance', 'setUtilities'].forEach(id => {
+      document.getElementById(id).addEventListener('input', updateDailyBillsDisplay);
+    });
+
     // Form Submissions
     this.earningsForm.addEventListener('submit', (e) => {
       e.preventDefault();
@@ -115,9 +143,17 @@ class Dashboard {
 
     this.settingsForm.addEventListener('submit', (e) => {
       e.preventDefault();
-      this.state.config.dailyGoal = parseFloat(document.getElementById('setDailyGoal').value);
-      this.state.config.weeklyGoal = parseFloat(document.getElementById('setWeeklyGoal').value);
-      this.state.config.dailyBills = parseFloat(document.getElementById('setDailyBills').value);
+      this.state.config.dailyGoal = parseFloat(document.getElementById('setDailyGoal').value) || 0;
+      this.state.config.weeklyGoal = parseFloat(document.getElementById('setWeeklyGoal').value) || 0;
+      
+      const rent = parseFloat(document.getElementById('setRent').value) || 0;
+      const car = parseFloat(document.getElementById('setCar').value) || 0;
+      const insurance = parseFloat(document.getElementById('setInsurance').value) || 0;
+      const utilities = parseFloat(document.getElementById('setUtilities').value) || 0;
+      
+      this.state.config.monthlyBills = { rent, car, insurance, utilities };
+      this.state.config.dailyBills = parseFloat(document.getElementById('setDailyBills').value) || 0;
+      
       this.saveState();
       this.closeAllModals();
     });
