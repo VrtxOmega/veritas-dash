@@ -5,6 +5,7 @@
     <link rel="icon" type="image/svg+xml" href="/vite.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
     <meta name="theme-color" content="#c9a84c" />
+    <meta name="description" content="Sovereign Dash — Premium gig-worker financial dashboard. Track DoorDash earnings, expenses, and hit your daily goals." />
     <link rel="manifest" href="./manifest.json" />
     <title>Sovereign Dash | VERITAS Budget</title>
     <link rel="preconnect" href="https://fonts.googleapis.com" />
@@ -16,6 +17,9 @@
     <link rel="stylesheet" href="./style.css" />
   </head>
   <body class="dark-theme">
+    <!-- Confetti Canvas -->
+    <canvas id="confettiCanvas"></canvas>
+
     <div class="app-container">
       <!-- Minimal Header -->
       <header class="top-nav">
@@ -27,6 +31,15 @@
       </header>
 
       <main class="dashboard-content">
+        <!-- Motivational Greeting -->
+        <section class="greeting-banner" id="greetingBanner">
+          <div class="greeting-emoji" id="greetingEmoji">☀️</div>
+          <div class="greeting-text">
+            <span class="greeting-headline" id="greetingHeadline">Good morning!</span>
+            <span class="greeting-sub" id="greetingSub">Let's make today count 💪</span>
+          </div>
+        </section>
+
         <!-- Hero: Progress Ring -->
         <section class="hero-section glass-panel">
           <div class="progress-ring-container">
@@ -40,15 +53,40 @@
               <span class="ring-sub" id="dailyProgressText">0% of Goal</span>
             </div>
           </div>
+          <!-- Smart Insight -->
+          <div class="smart-insight" id="smartInsight">
+            <svg class="insight-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="16" x2="12" y2="12"></line><line x1="12" y1="8" x2="12.01" y2="8"></line></svg>
+            <span id="insightText">Set your daily goal in settings to get started!</span>
+          </div>
           <div class="hero-stats">
             <div class="stat-pill">
               <span class="stat-label">To Reach Goal</span>
               <span class="stat-value highlight" id="remainingToGoal">$0.00</span>
             </div>
-            <div class="stat-pill">
+            <div class="stat-pill right-align">
               <span class="stat-label">Daily Goal</span>
               <span class="stat-value" id="dailyGoalDisplay">$0.00</span>
             </div>
+          </div>
+        </section>
+
+        <!-- Weekly Progress -->
+        <section class="weekly-section glass-panel">
+          <div class="weekly-header">
+            <h3>Weekly Progress</h3>
+            <span class="weekly-amount" id="weeklyEarned">$0 / $0</span>
+          </div>
+          <div class="weekly-bar-container">
+            <div class="weekly-bar-fill" id="weeklyBarFill"></div>
+          </div>
+          <div class="weekly-days" id="weeklyDays">
+            <div class="day-dot" data-day="Sun">S</div>
+            <div class="day-dot" data-day="Mon">M</div>
+            <div class="day-dot" data-day="Tue">T</div>
+            <div class="day-dot" data-day="Wed">W</div>
+            <div class="day-dot" data-day="Thu">T</div>
+            <div class="day-dot" data-day="Fri">F</div>
+            <div class="day-dot" data-day="Sat">S</div>
           </div>
         </section>
 
@@ -87,19 +125,28 @@
         <section class="history-section">
           <div class="section-header">
             <h2>Shift Log</h2>
-            <button class="settings-btn" id="openSettingsBtn" aria-label="Settings">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path></svg>
-            </button>
+            <div class="header-actions">
+              <button class="icon-btn" id="clearTodayBtn" aria-label="New Day" title="Start Fresh Day">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="1 4 1 10 7 10"></polyline><path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"></path></svg>
+              </button>
+              <button class="icon-btn" id="openSettingsBtn" aria-label="Settings">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path></svg>
+              </button>
+            </div>
           </div>
           <div class="transaction-list glass-panel" id="transactionList">
-            <div class="empty-state">No entries yet. Time to hit the road!</div>
+            <div class="empty-state">
+              <div class="empty-icon">🚗</div>
+              <div class="empty-title">No entries yet</div>
+              <div class="empty-sub">Tap the + button to log your first run!</div>
+            </div>
           </div>
         </section>
       </main>
 
       <!-- Floating Action Button -->
       <button class="fab" id="fabBtn">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
       </button>
 
       <!-- Overlay -->
@@ -111,20 +158,32 @@
         <h2>Add Entry</h2>
         
         <div class="action-tabs">
-          <button class="tab-btn active" data-tab="earnings">Earning</button>
-          <button class="tab-btn" data-tab="expenses">Expense</button>
+          <button class="tab-btn active" data-tab="earnings">💰 Earning</button>
+          <button class="tab-btn" data-tab="expenses">⛽ Expense</button>
+        </div>
+
+        <!-- Quick Add Presets -->
+        <div class="quick-presets" id="quickPresets">
+          <button class="preset-btn" data-amount="5">$5</button>
+          <button class="preset-btn" data-amount="10">$10</button>
+          <button class="preset-btn" data-amount="15">$15</button>
+          <button class="preset-btn" data-amount="20">$20</button>
+          <button class="preset-btn" data-amount="25">$25</button>
+          <button class="preset-btn" data-amount="50">$50</button>
         </div>
         
         <div class="tab-content active" id="tab-earnings">
           <form id="earningsForm" class="input-form">
             <div class="amount-input-wrapper">
               <span class="currency-symbol">$</span>
-              <input type="number" id="earningAmount" class="huge-input" step="0.01" min="0" placeholder="0.00" required />
+              <input type="number" id="earningAmount" class="huge-input" step="0.01" min="0" placeholder="0.00" inputmode="decimal" required />
             </div>
             <div class="input-group">
               <input type="text" id="earningDesc" class="modern-input" placeholder="Description (e.g., DoorDash Run)" />
             </div>
-            <button type="submit" class="btn primary-btn">Add Earning</button>
+            <button type="submit" class="btn primary-btn">
+              <span class="btn-text">💰 Add Earning</span>
+            </button>
           </form>
         </div>
 
@@ -132,12 +191,14 @@
           <form id="expensesForm" class="input-form">
             <div class="amount-input-wrapper negative-input">
               <span class="currency-symbol">$</span>
-              <input type="number" id="expenseAmount" class="huge-input" step="0.01" min="0" placeholder="0.00" required />
+              <input type="number" id="expenseAmount" class="huge-input" step="0.01" min="0" placeholder="0.00" inputmode="decimal" required />
             </div>
             <div class="input-group">
-              <input type="text" id="expenseDesc" class="modern-input" placeholder="Description (e.g., Gas, Snack)" required />
+              <input type="text" id="expenseDesc" class="modern-input" placeholder="Description (e.g., Gas, Snack)" />
             </div>
-            <button type="submit" class="btn danger-btn">Add Expense</button>
+            <button type="submit" class="btn danger-btn">
+              <span class="btn-text">⛽ Add Expense</span>
+            </button>
           </form>
         </div>
       </div>
@@ -145,41 +206,50 @@
       <!-- Settings Modal (Bottom Sheet) -->
       <div class="bottom-sheet glass-panel" id="settingsModal">
         <div class="sheet-handle"></div>
-        <h2>Shift Config</h2>
+        <h2>⚙️ Shift Config</h2>
         <form id="settingsForm" class="input-form">
-          <div class="input-group">
-            <label for="setDailyGoal">Daily Goal ($)</label>
-            <input type="number" id="setDailyGoal" class="modern-input" step="0.01" min="0" required />
-          </div>
-          <div class="input-group">
-            <label for="setWeeklyGoal">Weekly Goal ($)</label>
-            <input type="number" id="setWeeklyGoal" class="modern-input" step="0.01" min="0" required />
+          <div class="settings-grid">
+            <div class="input-group">
+              <label for="setDailyGoal">Daily Goal ($)</label>
+              <input type="number" id="setDailyGoal" class="modern-input" step="0.01" min="0" inputmode="decimal" required />
+            </div>
+            <div class="input-group">
+              <label for="setWeeklyGoal">Weekly Goal ($)</label>
+              <input type="number" id="setWeeklyGoal" class="modern-input" step="0.01" min="0" inputmode="decimal" required />
+            </div>
           </div>
           
-          <h3 style="margin-top: 15px; margin-bottom: 10px; font-size: 1rem; color: var(--text-muted);">Monthly Fixed Bills</h3>
-          <div class="input-group">
-            <label for="setRent">Rent / Mortgage ($)</label>
-            <input type="number" id="setRent" class="modern-input" step="0.01" min="0" placeholder="0.00" />
+          <div class="settings-divider">
+            <span>📋 Monthly Fixed Bills</span>
           </div>
-          <div class="input-group">
-            <label for="setCar">Car Payment ($)</label>
-            <input type="number" id="setCar" class="modern-input" step="0.01" min="0" placeholder="0.00" />
-          </div>
-          <div class="input-group">
-            <label for="setInsurance">Insurance ($)</label>
-            <input type="number" id="setInsurance" class="modern-input" step="0.01" min="0" placeholder="0.00" />
-          </div>
-          <div class="input-group">
-            <label for="setUtilities">Utilities ($)</label>
-            <input type="number" id="setUtilities" class="modern-input" step="0.01" min="0" placeholder="0.00" />
+          <div class="settings-grid">
+            <div class="input-group">
+              <label for="setRent">Rent / Mortgage</label>
+              <input type="number" id="setRent" class="modern-input" step="0.01" min="0" placeholder="0.00" inputmode="decimal" />
+            </div>
+            <div class="input-group">
+              <label for="setCar">Car Payment</label>
+              <input type="number" id="setCar" class="modern-input" step="0.01" min="0" placeholder="0.00" inputmode="decimal" />
+            </div>
+            <div class="input-group">
+              <label for="setInsurance">Insurance</label>
+              <input type="number" id="setInsurance" class="modern-input" step="0.01" min="0" placeholder="0.00" inputmode="decimal" />
+            </div>
+            <div class="input-group">
+              <label for="setUtilities">Utilities</label>
+              <input type="number" id="setUtilities" class="modern-input" step="0.01" min="0" placeholder="0.00" inputmode="decimal" />
+            </div>
           </div>
 
-          <div class="input-group">
-            <label for="setDailyBills">Computed Daily Bills Allocation ($)</label>
-            <input type="number" id="setDailyBills" class="modern-input highlight-input" step="0.01" min="0" readonly />
-            <small style="color: var(--text-muted); display: block; margin-top: 4px;">Automatically calculated from monthly bills (Total ÷ 30)</small>
+          <div class="computed-daily glass-panel">
+            <span class="computed-label">Daily Bills Allocation</span>
+            <span class="computed-value" id="setDailyBills">$0.00</span>
+            <span class="computed-note">Auto-calculated (Total ÷ 30)</span>
           </div>
-          <button type="submit" class="btn secondary-btn" style="margin-top: 15px;">Save Configuration</button>
+
+          <button type="submit" class="btn primary-btn">
+            <span class="btn-text">💾 Save Configuration</span>
+          </button>
         </form>
       </div>
 
