@@ -264,10 +264,21 @@ class Dashboard {
     });
 
     // Notes auto-save
+    const notesStatus = document.getElementById('notesStatus');
     if (this.dailyNotes) {
       this.dailyNotes.addEventListener('input', (e) => {
         this.state.notes = e.target.value;
         this.saveState();
+        if (notesStatus) {
+          notesStatus.textContent = 'Saving...';
+          notesStatus.classList.add('visible', 'saving');
+          clearTimeout(this.notesStatusTimeout);
+          this.notesStatusTimeout = setTimeout(() => {
+            notesStatus.textContent = 'Saved';
+            notesStatus.classList.remove('saving');
+            setTimeout(() => notesStatus.classList.remove('visible'), 2000);
+          }, 800);
+        }
       });
     }
 
