@@ -20,6 +20,7 @@ class Dashboard {
     this.bindEvents();
     this.updateGreeting();
     this.updateDashboard();
+    this.checkUrlForBackup();
   }
 
   loadState() {
@@ -34,6 +35,63 @@ class Dashboard {
   saveState() {
     localStorage.setItem('sovereign_dash_v3', JSON.stringify(this.state));
     this.updateDashboard();
+  }
+
+  checkUrlForBackup() {
+    const params = new URLSearchParams(window.location.search);
+    const backupData = params.get('backup');
+    if (backupData) {
+      try {
+        const decoded = decodeURIComponent(escape(window.atob(backupData)));
+        const parsedState = JSON.parse(decoded);
+        
+        if (parsedState && parsedState.config) {
+          if (confirm('A backup was found in the URL. Do you want to restore it? This will replace your current data.')) {
+            this.state = parsedState;
+            this.saveState();
+            this.showToast('Backup restored successfully! 🎉');
+          }
+        }
+      } catch (e) {
+        this.showToast('Invalid backup link.', true);
+      }
+      
+      const cleanUrl = window.location.origin + window.location.pathname;
+      window.history.replaceState({}, document.title, cleanUrl);
+      this.updateDashboard();
+    }
+  }
+
+  generateBackupLink() {
+    try {
+      const stateStr = JSON.stringify(this.state);
+      const encoded = window.btoa(unescape(encodeURIComponent(stateStr)));
+      const url = new URL(window.location.origin + window.location.pathname);
+      url.searchParams.set('backup', encoded);
+      const shareUrl = url.toString();
+
+      if (navigator.share) {
+        navigator.share({
+          title: 'Veritas Dash Backup',
+          text: 'Tap this link to restore your Veritas Dash data.',
+          url: shareUrl
+        }).catch(() => {
+          this.copyToClipboard(shareUrl);
+        });
+      } else {
+        this.copyToClipboard(shareUrl);
+      }
+    } catch (e) {
+      this.showToast('Failed to create backup.', true);
+    }
+  }
+
+  copyToClipboard(text) {
+    navigator.clipboard.writeText(text).then(() => {
+      this.showToast('Backup link copied to clipboard!');
+    }).catch(() => {
+      this.showToast('Failed to copy link.', true);
+    });
   }
 
   initDOM() {
@@ -52,7 +110,9 @@ class Dashboard {
     this.settingsModal = document.getElementById('settingsModal');
     this.overlay = document.getElementById('overlay');
     this.openSettingsBtn = document.getElementById('openSettingsBtn');
+    this.closeSettingsBtn = document.getElementById('closeSettingsBtn');
     this.clearTodayBtn = document.getElementById('clearTodayBtn');
+    this.btnBackup = document.getElementById('btnBackup');
     this.earningsForm = document.getElementById('earningsForm');
     this.expensesForm = document.getElementById('expensesForm');
     this.settingsForm = document.getElementById('settingsForm');
@@ -97,7 +157,12 @@ class Dashboard {
 
     this.fabBtn.addEventListener('click', () => this.openModal(this.actionModal));
     this.openSettingsBtn.addEventListener('click', () => this.openModal(this.settingsModal));
+    this.closeSettingsBtn.addEventListener('click', () => this.settingsModal.classList.remove('active'));
     this.overlay.addEventListener('click', () => this.closeAllModals());
+
+    if (this.btnBackup) {
+      this.btnBackup.addEventListener('click', () => this.generateBackupLink());
+    }
 
     // Tab Logic
     this.tabBtns.forEach(btn => {
