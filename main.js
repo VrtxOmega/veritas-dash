@@ -223,7 +223,9 @@ class Dashboard {
 
     this.fabBtn.addEventListener('click', () => this.openModal(this.actionModal));
     this.openSettingsBtn.addEventListener('click', () => this.openModal(this.settingsModal));
-    this.closeSettingsBtn.addEventListener('click', () => this.settingsModal.classList.remove('active'));
+    if (this.closeSettingsBtn) {
+      this.closeSettingsBtn.addEventListener('click', () => this.settingsModal.classList.remove('active'));
+    }
     this.overlay.addEventListener('click', () => this.closeAllModals());
 
     if (this.btnBackup) {
