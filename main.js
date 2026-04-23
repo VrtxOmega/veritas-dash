@@ -84,6 +84,12 @@ class Dashboard {
       if (error) throw error;
       
       if (data && data.state) {
+        const state = data.state;
+        if (!state || typeof state !== 'object' || !Array.isArray(state.transactions) || typeof state.config !== 'object') {
+          this.showToast('Backup data is corrupted or invalid', true);
+          return;
+        }
+
         if (confirm('Backup found! Restore it and replace current data?')) {
           this.state = data.state;
           // Ensure the pin is preserved in the restored state if it wasn't there
@@ -169,11 +175,15 @@ class Dashboard {
     this.grossEarnings = document.getElementById('grossEarnings');
     this.shiftExpenses = document.getElementById('shiftExpenses');
     this.allocatedBills = document.getElementById('allocatedBills');
+    this.hourlyRate = document.getElementById('hourlyRate');
     this.transactionList = document.getElementById('transactionList');
     this.fabBtn = document.getElementById('fabBtn');
     this.actionModal = document.getElementById('actionModal');
     this.settingsModal = document.getElementById('settingsModal');
     this.calculatorModal = document.getElementById('calculatorModal');
+    this.historyModal = document.getElementById('historyModal');
+    this.openHistoryBtn = document.getElementById('openHistoryBtn');
+    this.historyList = document.getElementById('historyList');
     this.overlay = document.getElementById('overlay');
     this.openSettingsBtn = document.getElementById('openSettingsBtn');
     this.openCalculatorBtn = document.getElementById('openCalculatorBtn');
@@ -225,6 +235,12 @@ class Dashboard {
 
     this.fabBtn.addEventListener('click', () => this.openModal(this.actionModal));
     this.openSettingsBtn.addEventListener('click', () => this.openModal(this.settingsModal));
+    if (this.openHistoryBtn) {
+      this.openHistoryBtn.addEventListener('click', () => {
+        this.renderHistory();
+        this.openModal(this.historyModal);
+      });
+    }
     if (this.openCalculatorBtn) {
       this.openCalculatorBtn.addEventListener('click', () => this.openModal(this.calculatorModal));
     }
@@ -389,6 +405,7 @@ class Dashboard {
     this.actionModal.classList.remove('active');
     this.settingsModal.classList.remove('active');
     if (this.calculatorModal) this.calculatorModal.classList.remove('active');
+    if (this.historyModal) this.historyModal.classList.remove('active');
   }
 
   addTransaction(type, amount, description) {
@@ -426,6 +443,40 @@ class Dashboard {
     this.confettiTriggered = false;
     this.saveState();
     this.showToast('Day archived! Starting fresh 🌅');
+  }
+
+  renderHistory() {
+    if (!this.historyList) return;
+    this.historyList.innerHTML = '';
+    const entries = Object.entries(this.state.weeklyLog).sort((a, b) => new Date(b[0]) - new Date(a[0]));
+    
+    if (entries.length === 0) {
+      this.historyList.innerHTML = '<div class="empty-state"><div class="empty-icon">📜</div><div class="empty-title">No history yet</div><div class="empty-sub">Your archived shifts will appear here.</div></div>';
+      return;
+    }
+
+    entries.forEach(([dateStr, data]) => {
+      const options = { weekday: 'short', month: 'short', day: 'numeric' };
+      const d = new Date(dateStr + "T12:00:00Z");
+      const displayDate = d.toLocaleDateString(undefined, options);
+      
+      const item = document.createElement('div');
+      item.className = 'history-item glass-panel';
+      
+      item.innerHTML = `
+        <div class="history-item-header">
+          <span class="history-date">${displayDate}</span>
+          <span class="history-net ${data.net >= 0 ? 'positive' : 'negative'}">
+            $${data.net.toFixed(2)}
+          </span>
+        </div>
+        <div class="history-item-details">
+          <span>Gross: $${data.gross.toFixed(2)}</span>
+          <span>Expenses: $${data.expenses.toFixed(2)}</span>
+        </div>
+      `;
+      this.historyList.appendChild(item);
+    });
   }
 
   getWeeklyData() {
@@ -508,8 +559,28 @@ class Dashboard {
     // Weekly
     this.updateWeeklyProgress();
 
+    // Hourly Rate
+    this.calculateHourlyRate(gross);
+
     // Render Transactions
     this.renderTransactions();
+  }
+
+  calculateHourlyRate(gross) {
+    if (!this.state.transactions || this.state.transactions.length < 2) {
+      if (this.hourlyRate) this.hourlyRate.textContent = '$0.00/hr';
+      return;
+    }
+    const times = this.state.transactions.map(t => new Date(t.timestamp).getTime());
+    const minTime = Math.min(...times);
+    const maxTime = Math.max(...times);
+    
+    let hours = (maxTime - minTime) / (1000 * 60 * 60);
+    if (hours <= 0) hours = 1; // avoid Infinity
+    
+    const rate = gross / hours;
+    const f = new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' });
+    if (this.hourlyRate) this.hourlyRate.textContent = `${f.format(rate)}/hr`;
   }
 
   updateSmartInsight(net, remaining, percent, gross) {
@@ -671,15 +742,38 @@ class Dashboard {
       const symbol = t.type === 'earning' ? '↑' : '↓';
       const emoji = t.type === 'earning' ? '💰' : '⛽';
 
-      el.innerHTML = `
-        <div class="txn-icon">${emoji}</div>
-        <div class="txn-info">
-          <div class="txn-desc">${t.description}</div>
-          <div class="txn-time">${timeStr}</div>
-        </div>
-        <div class="txn-amount ${t.type}">${symbol} ${f.format(t.amount)}</div>
-        <button class="txn-delete" data-id="${t.id}" aria-label="Delete">×</button>
-      `;
+      const iconDiv = document.createElement('div');
+      iconDiv.className = 'txn-icon';
+      iconDiv.textContent = emoji;
+
+      const infoDiv = document.createElement('div');
+      infoDiv.className = 'txn-info';
+
+      const descDiv = document.createElement('div');
+      descDiv.className = 'txn-desc';
+      descDiv.textContent = t.description;
+
+      const timeDiv = document.createElement('div');
+      timeDiv.className = 'txn-time';
+      timeDiv.textContent = timeStr;
+
+      infoDiv.appendChild(descDiv);
+      infoDiv.appendChild(timeDiv);
+
+      const amountDiv = document.createElement('div');
+      amountDiv.className = `txn-amount ${t.type}`;
+      amountDiv.textContent = `${symbol} ${f.format(t.amount)}`;
+
+      const deleteBtn = document.createElement('button');
+      deleteBtn.className = 'txn-delete';
+      deleteBtn.dataset.id = t.id;
+      deleteBtn.setAttribute('aria-label', 'Delete');
+      deleteBtn.textContent = '×';
+
+      el.appendChild(iconDiv);
+      el.appendChild(infoDiv);
+      el.appendChild(amountDiv);
+      el.appendChild(deleteBtn);
       this.transactionList.appendChild(el);
     });
 

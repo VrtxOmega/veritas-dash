@@ -124,6 +124,15 @@
               <span class="value" id="allocatedBills">$0.00</span>
             </div>
           </div>
+          <div class="stat-card positive glass-panel">
+            <div class="icon">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg>
+            </div>
+            <div class="stat-info">
+              <span class="label">Hourly Rate</span>
+              <span class="value" id="hourlyRate">--/hr</span>
+            </div>
+          </div>
         </section>
 
         <!-- Shift Log -->
@@ -131,6 +140,9 @@
           <div class="section-header">
             <h2>Shift Log</h2>
             <div class="header-actions">
+              <button class="icon-btn" id="openHistoryBtn" aria-label="History" title="Archived Logs">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg>
+              </button>
               <button class="icon-btn" id="clearTodayBtn" aria-label="New Day" title="Start Fresh Day">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="1 4 1 10 7 10"></polyline><path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"></path></svg>
               </button>
@@ -171,6 +183,15 @@
 
       <!-- Overlay -->
       <div class="overlay" id="overlay"></div>
+
+      <!-- History Modal (Bottom Sheet) -->
+      <div class="bottom-sheet glass-panel" id="historyModal">
+        <div class="sheet-handle"></div>
+        <h2>📜 Archived Shift Logs</h2>
+        <div class="history-list" id="historyList">
+          <!-- Populated by JS -->
+        </div>
+      </div>
 
       <!-- Action Modal (Bottom Sheet) -->
       <div class="bottom-sheet glass-panel" id="actionModal">
