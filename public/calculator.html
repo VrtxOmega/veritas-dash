@@ -35,16 +35,17 @@ body {
   justify-content: center;
   align-items: center;
   font-family: 'Rajdhani', sans-serif;
-  padding: 20px;
-  overflow-x: hidden;
+  padding: 10px;
+  overflow: hidden;
 }
 
 .calculator {
   background: linear-gradient(145deg, #0d0d0d, #000000);
   border: 1px solid rgba(255, 215, 0, 0.2);
   border-radius: 20px;
-  padding: 24px;
-  width: 380px;
+  padding: 16px;
+  width: 100%;
+  max-width: 360px;
   box-shadow: 
     0 0 60px rgba(255, 215, 0, 0.05),
     0 25px 50px rgba(0, 0, 0, 0.8),
@@ -73,7 +74,7 @@ body {
   display: flex;
   align-items: center;
   gap: 10px;
-  margin-bottom: 20px;
+  margin-bottom: 15px;
   position: relative;
   z-index: 1;
 }
@@ -106,8 +107,8 @@ body {
   background: #080808;
   border: 1px solid rgba(255, 215, 0, 0.15);
   border-radius: 12px;
-  padding: 20px;
-  margin-bottom: 20px;
+  padding: 16px;
+  margin-bottom: 15px;
   position: relative;
   z-index: 1;
 }
@@ -136,7 +137,7 @@ body {
 .mode-indicator {
   display: flex;
   gap: 6px;
-  margin-bottom: 16px;
+  margin-bottom: 12px;
   position: relative;
   z-index: 1;
 }
@@ -179,10 +180,10 @@ body {
   background: linear-gradient(145deg, #141414, #0a0a0a);
   border: 1px solid rgba(255, 215, 0, 0.1);
   color: var(--text);
-  padding: 16px 8px;
-  border-radius: 10px;
+  padding: 12px 6px;
+  border-radius: 8px;
   font-family: 'Rajdhani', sans-serif;
-  font-size: 18px;
+  font-size: 16px;
   font-weight: 600;
   cursor: pointer;
   transition: all 0.15s;
@@ -258,12 +259,12 @@ body {
   grid-column: span 2;
 }
 
-.trig-btn { font-size: 14px; }
+.trig-btn { font-size: 13px; }
 .func-btn { font-size: 13px; }
 
 .footer {
   text-align: center;
-  margin-top: 20px;
+  margin-top: 15px;
   position: relative;
   z-index: 1;
 }
@@ -305,49 +306,51 @@ body {
   </div>
   
   <div class="buttons">
-    <button class="btn btn-clear" onclick="clearAll()">AC</button>
-    <button class="btn btn-clear" onclick="clearEntry()">CE</button>
-    <button class="btn btn-gold" onclick="backspace()">⌫</button>
-    <button class="btn btn-gold" onclick="input('÷')">÷</button>
-    
     <button class="btn func-btn" onclick="input('sin(')">sin</button>
     <button class="btn func-btn" onclick="input('cos(')">cos</button>
     <button class="btn func-btn" onclick="input('tan(')">tan</button>
-    <button class="btn" onclick="input('7')">7</button>
-    <button class="btn" onclick="input('8')">8</button>
+    <button class="btn func-btn" onclick="input('(')">(</button>
+    <button class="btn func-btn" onclick="input(')')">)</button>
     
     <button class="btn func-btn" onclick="input('sin⁻¹(')">sin⁻¹</button>
     <button class="btn func-btn" onclick="input('cos⁻¹(')">cos⁻¹</button>
     <button class="btn func-btn" onclick="input('tan⁻¹(')">tan⁻¹</button>
-    <button class="btn" onclick="input('4')">4</button>
-    <button class="btn" onclick="input('5')">5</button>
+    <button class="btn func-btn" onclick="input('^')">x^</button>
+    <button class="btn func-btn" onclick="input('√(')">√</button>
     
     <button class="btn func-btn" onclick="input('ln(')">ln</button>
     <button class="btn func-btn" onclick="input('log(')">log</button>
-    <button class="btn func-btn" onclick="input('√(')">√</button>
+    <button class="btn func-btn" onclick="input('e')">e</button>
+    <button class="btn func-btn" onclick="input('10^')">10^x</button>
+    <button class="btn func-btn" onclick="input('1/')">1/x</button>
+    
+    <button class="btn func-btn" onclick="input('!')">n!</button>
+    <button class="btn func-btn" onclick="input('π')">π</button>
+    <button class="btn btn-clear" onclick="clearEntry()">CE</button>
+    <button class="btn btn-clear" onclick="clearAll()">AC</button>
+    <button class="btn btn-gold" onclick="backspace()">⌫</button>
+    
+    <button class="btn" onclick="input('7')">7</button>
+    <button class="btn" onclick="input('8')">8</button>
+    <button class="btn" onclick="input('9')">9</button>
+    <button class="btn btn-gold" onclick="input('%')">%</button>
+    <button class="btn btn-gold" onclick="input('÷')">÷</button>
+    
+    <button class="btn" onclick="input('4')">4</button>
+    <button class="btn" onclick="input('5')">5</button>
+    <button class="btn" onclick="input('6')">6</button>
+    <button class="btn btn-gold" onclick="input('×')">×</button>
+    <button class="btn btn-gold" onclick="input('-')">−</button>
+    
     <button class="btn" onclick="input('1')">1</button>
     <button class="btn" onclick="input('2')">2</button>
-    
-    <button class="btn" onclick="input('^')">x^</button>
-    <button class="btn" onclick="input('10^')">10^x</button>
-    <button class="btn" onclick="input('π')">π</button>
     <button class="btn" onclick="input('3')">3</button>
-    <button class="btn" onclick="input('6')">6</button>
+    <button class="btn btn-gold" onclick="input('+')">+</button>
+    <button class="btn btn-primary" style="grid-row: span 2;" onclick="calculate()">=</button>
     
-    <button class="btn" onclick="input('e')">e</button>
-    <button class="btn" onclick="input('(')">(</button>
-    <button class="btn" onclick="input(')')">)</button>
-    <button class="btn" onclick="input('×')">×</button>
-    <button class="btn" onclick="input('-')">−</button>
-    
-    <button class="btn" onclick="input('!')">n!</button>
-    <button class="btn" onclick="input('1/')">1/x</button>
-    <button class="btn" onclick="input('%')">%</button>
+    <button class="btn" style="grid-column: span 2;" onclick="input('0')">0</button>
     <button class="btn btn-gold" onclick="input('.')">.</button>
-    <button class="btn btn-primary" onclick="calculate()">=</button>
-    
-    <button class="btn" onclick="input('0')" style="grid-column: 2;">0</button>
-    <button class="btn" onclick="input('+')">+</button>
+    <button class="btn btn-gold" onclick="input('00')">00</button>
   </div>
   
   <div class="footer">
