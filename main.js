@@ -228,6 +228,10 @@ class Dashboard {
     if (this.openCalculatorBtn) {
       this.openCalculatorBtn.addEventListener('click', () => this.openModal(this.calculatorModal));
     }
+    const closeCalcBtn = document.getElementById('closeCalcBtn');
+    if (closeCalcBtn) closeCalcBtn.addEventListener('click', () => this.closeAllModals());
+    const calcHandle = document.getElementById('calcSheetHandle');
+    if (calcHandle) calcHandle.addEventListener('click', () => this.closeAllModals());
     if (this.closeSettingsBtn) {
       this.closeSettingsBtn.addEventListener('click', () => this.settingsModal.classList.remove('active'));
     }

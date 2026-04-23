@@ -225,11 +225,12 @@
 
       <!-- Calculator Modal (Bottom Sheet) -->
       <div class="bottom-sheet glass-panel" id="calculatorModal">
-        <div class="sheet-handle"></div>
+        <div class="sheet-handle" id="calcSheetHandle" style="cursor: pointer;"></div>
         <div id="calcWidget">
           <div class="calc-brand">
             <div class="calc-brand-icon">V</div>
             <div class="calc-brand-text">VERITAS</div>
+            <button id="closeCalcBtn" style="margin-left:auto; background:rgba(255,255,255,0.06); border:1px solid rgba(255,255,255,0.12); color:var(--vrts-text-muted); width:32px; height:32px; border-radius:10px; font-size:18px; cursor:pointer; display:flex; align-items:center; justify-content:center; transition:all 0.2s;">×</button>
           </div>
           <div class="calc-display">
             <div class="calc-expr" id="calcExpression"></div>
