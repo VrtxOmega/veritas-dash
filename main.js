@@ -173,8 +173,10 @@ class Dashboard {
     this.fabBtn = document.getElementById('fabBtn');
     this.actionModal = document.getElementById('actionModal');
     this.settingsModal = document.getElementById('settingsModal');
+    this.calculatorModal = document.getElementById('calculatorModal');
     this.overlay = document.getElementById('overlay');
     this.openSettingsBtn = document.getElementById('openSettingsBtn');
+    this.openCalculatorBtn = document.getElementById('openCalculatorBtn');
     this.closeSettingsBtn = document.getElementById('closeSettingsBtn');
     this.clearTodayBtn = document.getElementById('clearTodayBtn');
     this.btnBackup = document.getElementById('btnBackup');
@@ -223,6 +225,9 @@ class Dashboard {
 
     this.fabBtn.addEventListener('click', () => this.openModal(this.actionModal));
     this.openSettingsBtn.addEventListener('click', () => this.openModal(this.settingsModal));
+    if (this.openCalculatorBtn) {
+      this.openCalculatorBtn.addEventListener('click', () => this.openModal(this.calculatorModal));
+    }
     if (this.closeSettingsBtn) {
       this.closeSettingsBtn.addEventListener('click', () => this.settingsModal.classList.remove('active'));
     }
@@ -377,6 +382,7 @@ class Dashboard {
     this.overlay.classList.remove('active');
     this.actionModal.classList.remove('active');
     this.settingsModal.classList.remove('active');
+    if (this.calculatorModal) this.calculatorModal.classList.remove('active');
   }
 
   addTransaction(type, amount, description) {

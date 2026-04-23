@@ -1,0 +1,541 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>VERITAS Scientific Calculator</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Rajdhani:wght@300;400;500;600;700&display=swap');
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+:root {
+  --gold: #FFD700;
+  --gold-light: #FFF1B0;
+  --gold-dark: #B8860B;
+  --black: #000000;
+  --carbon: #0A0A0A;
+  --panel: #111111;
+  --edge: #1a1a1a;
+  --text: #E8E8E8;
+  --dim: #666666;
+}
+
+body {
+  background: var(--carbon);
+  background-image: 
+    radial-gradient(ellipse at 50% 0%, rgba(255, 215, 0, 0.03) 0%, transparent 60%),
+    linear-gradient(180deg, #0d0d0d 0%, #000000 100%);
+  min-height: 100vh;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  font-family: 'Rajdhani', sans-serif;
+  padding: 20px;
+  overflow-x: hidden;
+}
+
+.calculator {
+  background: linear-gradient(145deg, #0d0d0d, #000000);
+  border: 1px solid rgba(255, 215, 0, 0.2);
+  border-radius: 20px;
+  padding: 24px;
+  width: 380px;
+  box-shadow: 
+    0 0 60px rgba(255, 215, 0, 0.05),
+    0 25px 50px rgba(0, 0, 0, 0.8),
+    inset 0 1px 0 rgba(255, 215, 0, 0.1);
+  position: relative;
+  overflow: hidden;
+}
+
+.calculator::before {
+  content: '';
+  position: absolute;
+  top: -50%;
+  left: -50%;
+  width: 200%;
+  height: 200%;
+  background: conic-gradient(from 0deg, transparent 0deg 340deg, rgba(255, 215, 0, 0.03) 340deg 360deg);
+  animation: rotate 20s linear infinite;
+  pointer-events: none;
+}
+
+@keyframes rotate {
+  to { transform: rotate(360deg); }
+}
+
+.brand {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 20px;
+  position: relative;
+  z-index: 1;
+}
+
+.brand-icon {
+  width: 36px;
+  height: 36px;
+  background: linear-gradient(135deg, var(--gold) 0%, var(--gold-dark) 100%);
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: 'Orbitron', monospace;
+  font-weight: 900;
+  font-size: 18px;
+  color: var(--black);
+  box-shadow: 0 0 20px rgba(255, 215, 0, 0.3);
+}
+
+.brand-text {
+  font-family: 'Orbitron', monospace;
+  font-size: 22px;
+  font-weight: 700;
+  color: var(--gold);
+  letter-spacing: 6px;
+  text-shadow: 0 0 20px rgba(255, 215, 0, 0.5);
+}
+
+.display-container {
+  background: #080808;
+  border: 1px solid rgba(255, 215, 0, 0.15);
+  border-radius: 12px;
+  padding: 20px;
+  margin-bottom: 20px;
+  position: relative;
+  z-index: 1;
+}
+
+.expression {
+  font-family: 'Rajdhani', sans-serif;
+  font-size: 16px;
+  color: var(--dim);
+  text-align: right;
+  min-height: 24px;
+  word-break: break-all;
+  letter-spacing: 1px;
+}
+
+.result {
+  font-family: 'Orbitron', monospace;
+  font-size: 36px;
+  font-weight: 700;
+  color: var(--gold);
+  text-align: right;
+  word-break: break-all;
+  text-shadow: 0 0 30px rgba(255, 215, 0, 0.4);
+  margin-top: 8px;
+}
+
+.mode-indicator {
+  display: flex;
+  gap: 6px;
+  margin-bottom: 16px;
+  position: relative;
+  z-index: 1;
+}
+
+.mode-btn {
+  background: rgba(255, 215, 0, 0.05);
+  border: 1px solid rgba(255, 215, 0, 0.15);
+  color: var(--dim);
+  padding: 6px 14px;
+  border-radius: 6px;
+  font-family: 'Rajdhani', sans-serif;
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 1px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.mode-btn.active {
+  background: linear-gradient(135deg, var(--gold) 0%, var(--gold-dark) 100%);
+  color: var(--black);
+  border-color: var(--gold);
+  box-shadow: 0 0 15px rgba(255, 215, 0, 0.3);
+}
+
+.mode-btn:hover:not(.active) {
+  border-color: rgba(255, 215, 0, 0.4);
+  color: var(--gold);
+}
+
+.buttons {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 8px;
+  position: relative;
+  z-index: 1;
+}
+
+.btn {
+  background: linear-gradient(145deg, #141414, #0a0a0a);
+  border: 1px solid rgba(255, 215, 0, 0.1);
+  color: var(--text);
+  padding: 16px 8px;
+  border-radius: 10px;
+  font-family: 'Rajdhani', sans-serif;
+  font-size: 18px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.15s;
+  position: relative;
+  overflow: hidden;
+}
+
+.btn::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, rgba(255, 215, 0, 0.3), transparent);
+  opacity: 0;
+  transition: opacity 0.15s;
+}
+
+.btn:hover::before {
+  opacity: 1;
+}
+
+.btn:hover {
+  background: linear-gradient(145deg, #1a1a1a, #0f0f0f);
+  border-color: rgba(255, 215, 0, 0.3);
+  transform: translateY(-1px);
+}
+
+.btn:active {
+  transform: translateY(1px);
+  background: linear-gradient(145deg, #0a0a0a, #050505);
+}
+
+.btn-gold {
+  background: linear-gradient(145deg, #1a1500, #0d0a00);
+  border-color: rgba(255, 215, 0, 0.3);
+  color: var(--gold);
+}
+
+.btn-gold:hover {
+  background: linear-gradient(145deg, #252000, #151000);
+  border-color: var(--gold);
+  box-shadow: 0 0 20px rgba(255, 215, 0, 0.2);
+}
+
+.btn-primary {
+  background: linear-gradient(145deg, var(--gold), var(--gold-dark));
+  border-color: var(--gold);
+  color: var(--black);
+  font-weight: 700;
+  box-shadow: 0 0 20px rgba(255, 215, 0, 0.3);
+}
+
+.btn-primary:hover {
+  background: linear-gradient(145deg, var(--gold-light), var(--gold));
+  box-shadow: 0 0 30px rgba(255, 215, 0, 0.5);
+}
+
+.btn-clear {
+  background: linear-gradient(145deg, #1a0505, #0d0000);
+  border-color: rgba(255, 100, 100, 0.3);
+  color: #ff6b6b;
+}
+
+.btn-clear:hover {
+  background: linear-gradient(145deg, #200808, #120202);
+  border-color: rgba(255, 100, 100, 0.5);
+  box-shadow: 0 0 20px rgba(255, 100, 100, 0.2);
+}
+
+.btn-wide {
+  grid-column: span 2;
+}
+
+.trig-btn { font-size: 14px; }
+.func-btn { font-size: 13px; }
+
+.footer {
+  text-align: center;
+  margin-top: 20px;
+  position: relative;
+  z-index: 1;
+}
+
+.footer span {
+  font-family: 'Orbitron', monospace;
+  font-size: 10px;
+  color: rgba(255, 215, 0, 0.3);
+  letter-spacing: 3px;
+}
+
+@keyframes glow {
+  0%, 100% { text-shadow: 0 0 20px rgba(255, 215, 0, 0.4); }
+  50% { text-shadow: 0 0 40px rgba(255, 215, 0, 0.7); }
+}
+
+.result.glow {
+  animation: glow 2s ease-in-out infinite;
+}
+</style>
+</head>
+<body>
+
+<div class="calculator">
+  <div class="brand">
+    <div class="brand-icon">V</div>
+    <div class="brand-text">VERITAS</div>
+  </div>
+  
+  <div class="display-container">
+    <div class="expression" id="expression"></div>
+    <div class="result" id="result">0</div>
+  </div>
+  
+  <div class="mode-indicator">
+    <button class="mode-btn active" data-mode="deg" onclick="setMode('deg')">DEG</button>
+    <button class="mode-btn" data-mode="rad" onclick="setMode('rad')">RAD</button>
+    <button class="mode-btn" onclick="toggleHyp(this)">HYP</button>
+  </div>
+  
+  <div class="buttons">
+    <button class="btn btn-clear" onclick="clearAll()">AC</button>
+    <button class="btn btn-clear" onclick="clearEntry()">CE</button>
+    <button class="btn btn-gold" onclick="backspace()">⌫</button>
+    <button class="btn btn-gold" onclick="input('÷')">÷</button>
+    
+    <button class="btn func-btn" onclick="input('sin(')">sin</button>
+    <button class="btn func-btn" onclick="input('cos(')">cos</button>
+    <button class="btn func-btn" onclick="input('tan(')">tan</button>
+    <button class="btn" onclick="input('7')">7</button>
+    <button class="btn" onclick="input('8')">8</button>
+    
+    <button class="btn func-btn" onclick="input('sin⁻¹(')">sin⁻¹</button>
+    <button class="btn func-btn" onclick="input('cos⁻¹(')">cos⁻¹</button>
+    <button class="btn func-btn" onclick="input('tan⁻¹(')">tan⁻¹</button>
+    <button class="btn" onclick="input('4')">4</button>
+    <button class="btn" onclick="input('5')">5</button>
+    
+    <button class="btn func-btn" onclick="input('ln(')">ln</button>
+    <button class="btn func-btn" onclick="input('log(')">log</button>
+    <button class="btn func-btn" onclick="input('√(')">√</button>
+    <button class="btn" onclick="input('1')">1</button>
+    <button class="btn" onclick="input('2')">2</button>
+    
+    <button class="btn" onclick="input('^')">x^</button>
+    <button class="btn" onclick="input('10^')">10^x</button>
+    <button class="btn" onclick="input('π')">π</button>
+    <button class="btn" onclick="input('3')">3</button>
+    <button class="btn" onclick="input('6')">6</button>
+    
+    <button class="btn" onclick="input('e')">e</button>
+    <button class="btn" onclick="input('(')">(</button>
+    <button class="btn" onclick="input(')')">)</button>
+    <button class="btn" onclick="input('×')">×</button>
+    <button class="btn" onclick="input('-')">−</button>
+    
+    <button class="btn" onclick="input('!')">n!</button>
+    <button class="btn" onclick="input('1/')">1/x</button>
+    <button class="btn" onclick="input('%')">%</button>
+    <button class="btn btn-gold" onclick="input('.')">.</button>
+    <button class="btn btn-primary" onclick="calculate()">=</button>
+    
+    <button class="btn" onclick="input('0')" style="grid-column: 2;">0</button>
+    <button class="btn" onclick="input('+')">+</button>
+  </div>
+  
+  <div class="footer">
+    <span>▲ VERITAS SCIENTIFIC CALCULATOR</span>
+  </div>
+</div>
+
+<script>
+let expression = '';
+let result = '0';
+let mode = 'deg';
+let hyp = false;
+
+const display = document.getElementById('expression');
+const resultEl = document.getElementById('result');
+
+function setMode(m) {
+  mode = m;
+  document.querySelectorAll('.mode-btn[data-mode]').forEach(b => {
+    b.classList.toggle('active', b.dataset.mode === m);
+  });
+  updatePreview();
+}
+
+function toggleHyp(btn) {
+  hyp = !hyp;
+  btn.classList.toggle('active', hyp);
+  updatePreview();
+}
+
+function input(val) {
+  expression += val;
+  display.textContent = expression;
+  updatePreview();
+}
+
+function clearAll() {
+  expression = '';
+  result = '0';
+  display.textContent = '';
+  resultEl.textContent = '0';
+  resultEl.classList.remove('glow');
+}
+
+function clearEntry() {
+  if (!expression) return;
+  expression = '';
+  display.textContent = '';
+  resultEl.textContent = '0';
+  resultEl.classList.remove('glow');
+}
+
+function backspace() {
+  if (!expression) return;
+  const funcs = ['sin(', 'cos(', 'tan(', 'sin⁻¹(', 'cos⁻¹(', 'tan⁻¹(', 'ln(', 'log(', '√(', '10^'];
+  let removed = false;
+  for (let f of funcs) {
+    if (expression.endsWith(f)) {
+      expression = expression.slice(0, -f.length);
+      removed = true;
+      break;
+    }
+  }
+  if (!removed) {
+    expression = expression.slice(0, -1);
+  }
+  
+  display.textContent = expression;
+  if (!expression) {
+    resultEl.textContent = '0';
+    resultEl.classList.remove('glow');
+  } else {
+    updatePreview();
+  }
+}
+
+function factorial(n) {
+  if (n < 0 || !Number.isInteger(n)) return NaN;
+  if (n === 0 || n === 1) return 1;
+  let f = 1;
+  for (let i = 2; i <= n; i++) f *= i;
+  return f;
+}
+
+function safeEval(expr) {
+  let e = expr
+    .replace(/×/g, '*')
+    .replace(/÷/g, '/')
+    .replace(/−/g, '-')
+    .replace(/π/g, `(${Math.PI})`)
+    .replace(/e/g, `(${Math.E})`)
+    .replace(/sin⁻¹\(/g, 'asin(')
+    .replace(/cos⁻¹\(/g, 'acos(')
+    .replace(/tan⁻¹\(/g, 'atan(')
+    .replace(/√\(/g, 'Math.sqrt(')
+    .replace(/ln\(/g, 'Math.log(')
+    .replace(/log\(/g, 'Math.log10(')
+    .replace(/\^/g, '**')
+    .replace(/(\d+(?:\.\d+)?)!/g, (m, n) => factorial(parseFloat(n)))
+    .replace(/(\d+(?:\.\d+)?)%/g, (m, n) => parseFloat(n) / 100);
+
+  const prefix = `
+    "use strict";
+    const toRadians = (val) => ${mode === 'deg' ? 'val * Math.PI / 180' : 'val'};
+    const fromRadians = (val) => ${mode === 'deg' ? 'val * 180 / Math.PI' : 'val'};
+    const sin = (x) => {
+        if (${!hyp && mode === 'deg'} && x % 180 === 0) return 0;
+        return ${hyp ? 'Math.sinh(x)' : 'Math.sin(toRadians(x))'};
+    };
+    const cos = (x) => {
+        if (${!hyp && mode === 'deg'} && (x - 90) % 180 === 0) return 0;
+        return ${hyp ? 'Math.cosh(x)' : 'Math.cos(toRadians(x))'};
+    };
+    const tan = (x) => {
+        if (${!hyp && mode === 'deg'}) {
+            if (x % 180 === 0) return 0;
+            if ((x - 90) % 180 === 0) return Infinity;
+        }
+        return ${hyp ? 'Math.tanh(x)' : 'Math.tan(toRadians(x))'};
+    };
+    const asin = (x) => ${hyp ? 'Math.asinh(x)' : 'fromRadians(Math.asin(x))'};
+    const acos = (x) => ${hyp ? 'Math.acosh(x)' : 'fromRadians(Math.acos(x))'};
+    const atan = (x) => ${hyp ? 'Math.atanh(x)' : 'fromRadians(Math.atan(x))'};
+    return (${e});
+  `;
+
+  return Function(prefix)();
+}
+
+function formatResult(r) {
+  if (typeof r !== 'number') return r;
+  if (!isFinite(r)) return r === Infinity ? '∞' : r === -Infinity ? '-∞' : 'NaN';
+  if (Math.abs(r) < 1e-15) return '0';
+  if (Math.abs(r) > 999999999 || (Math.abs(r) < 0.000001 && r !== 0)) {
+    return r.toExponential(8).replace(/\.?0+e/, 'e');
+  }
+  let str = parseFloat(r.toPrecision(12)).toString();
+  if (str.includes('e')) str = r.toExponential(8).replace(/\.?0+e/, 'e');
+  return str;
+}
+
+function updatePreview() {
+  if (!expression) return;
+  try {
+    let r = safeEval(expression);
+    resultEl.textContent = formatResult(r);
+  } catch (err) {
+    // Keep previous valid result during typing
+  }
+}
+
+function calculate() {
+  if (!expression) return;
+  try {
+    let r = safeEval(expression);
+    let finalStr = formatResult(r);
+    resultEl.textContent = finalStr;
+    resultEl.classList.add('glow');
+    
+    // Auto-update expression to result for chaining
+    if (finalStr !== 'NaN' && finalStr !== '∞' && finalStr !== '-∞' && finalStr !== 'Error') {
+      expression = finalStr;
+      display.textContent = '';
+    }
+  } catch (err) {
+    resultEl.textContent = 'Error';
+    resultEl.classList.remove('glow');
+  }
+}
+
+// Keyboard support
+document.addEventListener('keydown', (e) => {
+  const key = e.key;
+  if (/^[0-9]$/.test(key)) input(key);
+  else if (key === '.') input('.');
+  else if (key === '+') input('+');
+  else if (key === '-') input('-');
+  else if (key === '*') input('×');
+  else if (key === '/') input('÷');
+  else if (key === '^') input('^');
+  else if (key === '%') input('%');
+  else if (key === 'Enter' || key === '=') { e.preventDefault(); calculate(); }
+  else if (key === 'Escape') clearAll();
+  else if (key === 'Backspace') backspace();
+  else if (key === '(') input('(');
+  else if (key === ')') input(')');
+});
+</script>
+
+</body>
+</html>
