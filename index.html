@@ -224,12 +224,156 @@
       </div>
 
       <!-- Calculator Modal (Bottom Sheet) -->
-      <div class="bottom-sheet glass-panel" id="calculatorModal" style="padding: 0; overflow: hidden; display: flex; flex-direction: column;">
-        <div class="sheet-handle" style="margin-top: 10px; margin-bottom: 5px;"></div>
-        <div style="flex: 1; min-height: 580px; width: 100%;">
-          <iframe src="./calculator.html" style="width: 100%; height: 100%; border: none; background: transparent;"></iframe>
+      <div class="bottom-sheet glass-panel" id="calculatorModal">
+        <div class="sheet-handle"></div>
+        <div id="calcWidget">
+          <div class="calc-brand">
+            <div class="calc-brand-icon">V</div>
+            <div class="calc-brand-text">VERITAS</div>
+          </div>
+          <div class="calc-display">
+            <div class="calc-expr" id="calcExpression"></div>
+            <div class="calc-result" id="calcResult">0</div>
+          </div>
+          <div class="calc-modes">
+            <button class="calc-mode active" data-mode="deg" onclick="calcSetMode('deg')">DEG</button>
+            <button class="calc-mode" data-mode="rad" onclick="calcSetMode('rad')">RAD</button>
+            <button class="calc-mode" onclick="calcToggleHyp(this)">HYP</button>
+          </div>
+          <div class="calc-grid">
+            <button class="cg cf" onclick="calcInput('sin(')">sin</button>
+            <button class="cg cf" onclick="calcInput('cos(')">cos</button>
+            <button class="cg cf" onclick="calcInput('tan(')">tan</button>
+            <button class="cg cf" onclick="calcInput('(')">(</button>
+            <button class="cg cf" onclick="calcInput(')')">)</button>
+
+            <button class="cg cf" onclick="calcInput('ln(')">ln</button>
+            <button class="cg cf" onclick="calcInput('log(')">log</button>
+            <button class="cg cf" onclick="calcInput('√(')">√</button>
+            <button class="cg cf" onclick="calcInput('^')">x^</button>
+            <button class="cg cf" onclick="calcInput('π')">π</button>
+
+            <button class="cg cc" onclick="calcClearEntry()">CE</button>
+            <button class="cg cc" onclick="calcClearAll()">AC</button>
+            <button class="cg co" onclick="calcBackspace()">⌫</button>
+            <button class="cg co" onclick="calcInput('%')">%</button>
+            <button class="cg co" onclick="calcInput('÷')">÷</button>
+
+            <button class="cg" onclick="calcInput('7')">7</button>
+            <button class="cg" onclick="calcInput('8')">8</button>
+            <button class="cg" onclick="calcInput('9')">9</button>
+            <button class="cg co" onclick="calcInput('×')">×</button>
+            <button class="cg co" onclick="calcInput('-')">−</button>
+
+            <button class="cg" onclick="calcInput('4')">4</button>
+            <button class="cg" onclick="calcInput('5')">5</button>
+            <button class="cg" onclick="calcInput('6')">6</button>
+            <button class="cg co" onclick="calcInput('+')">+</button>
+            <button class="cg cp" style="grid-row: span 2;" onclick="calcEquals()">=</button>
+
+            <button class="cg" onclick="calcInput('1')">1</button>
+            <button class="cg" onclick="calcInput('2')">2</button>
+            <button class="cg" onclick="calcInput('3')">3</button>
+            <button class="cg co" onclick="calcInput('.')">.</button>
+
+            <button class="cg" style="grid-column: span 2;" onclick="calcInput('0')">0</button>
+            <button class="cg" onclick="calcInput('00')">00</button>
+            <button class="cg cf" onclick="calcInput('e')">e</button>
+          </div>
         </div>
       </div>
+
+      <style>
+        #calcWidget { padding: 0 0.5rem 0.5rem; }
+        .calc-brand { display: flex; align-items: center; gap: 10px; margin-bottom: 12px; }
+        .calc-brand-icon { width: 32px; height: 32px; background: linear-gradient(135deg, var(--vrts-gold), #a0872e); border-radius: 8px; display: flex; align-items: center; justify-content: center; font-family: 'Outfit', sans-serif; font-weight: 900; font-size: 16px; color: #0b0c0f; box-shadow: 0 0 14px var(--vrts-gold-glow); }
+        .calc-brand-text { font-family: 'Outfit', sans-serif; font-size: 20px; font-weight: 700; color: var(--vrts-gold); letter-spacing: 5px; text-shadow: 0 0 14px var(--vrts-gold-glow); }
+        .calc-display { background: #080a0e; border: 1px solid rgba(200,167,76,0.15); border-radius: 12px; padding: 14px 16px; margin-bottom: 12px; }
+        .calc-expr { font-size: 14px; color: var(--vrts-text-muted); text-align: right; min-height: 20px; word-break: break-all; letter-spacing: 0.5px; }
+        .calc-result { font-family: 'Outfit', monospace; font-size: 32px; font-weight: 700; color: var(--vrts-gold); text-align: right; word-break: break-all; text-shadow: 0 0 20px var(--vrts-gold-glow); margin-top: 4px; }
+        .calc-result.glow { animation: calcGlow 2s ease-in-out infinite; }
+        @keyframes calcGlow { 0%,100%{text-shadow:0 0 20px var(--vrts-gold-glow)} 50%{text-shadow:0 0 40px var(--vrts-gold)} }
+        .calc-modes { display: flex; gap: 6px; margin-bottom: 10px; }
+        .calc-mode { background: rgba(200,167,76,0.06); border: 1px solid rgba(200,167,76,0.15); color: var(--vrts-text-muted); padding: 5px 12px; border-radius: 6px; font-family: var(--font-main); font-size: 11px; font-weight: 600; letter-spacing: 1px; cursor: pointer; transition: all 0.2s; }
+        .calc-mode.active { background: linear-gradient(135deg, var(--vrts-gold), #a0872e); color: #0b0c0f; border-color: var(--vrts-gold); box-shadow: 0 0 12px var(--vrts-gold-glow); }
+        .calc-mode:hover:not(.active) { border-color: rgba(200,167,76,0.4); color: var(--vrts-gold); }
+        .calc-grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 6px; }
+        .cg { background: linear-gradient(145deg, #181b22, #0f1117); border: 1px solid rgba(255,255,255,0.07); color: var(--vrts-text); padding: 13px 4px; border-radius: 10px; font-family: var(--font-main); font-size: 16px; font-weight: 600; cursor: pointer; transition: all 0.15s; }
+        .cg:hover { background: linear-gradient(145deg, #22262f, #181b22); border-color: rgba(200,167,76,0.25); transform: translateY(-1px); }
+        .cg:active { transform: translateY(1px); background: #0a0c10; }
+        .cf { font-size: 13px; color: var(--vrts-text-muted); }
+        .co { background: linear-gradient(145deg, #1a1700, #0d0a00); border-color: rgba(200,167,76,0.2); color: var(--vrts-gold); }
+        .co:hover { border-color: var(--vrts-gold); box-shadow: 0 0 12px var(--vrts-gold-glow); }
+        .cc { background: linear-gradient(145deg, #1a0505, #0d0000); border-color: rgba(255,100,100,0.2); color: #ff6b6b; }
+        .cc:hover { border-color: rgba(255,100,100,0.5); box-shadow: 0 0 12px rgba(255,100,100,0.2); }
+        .cp { background: linear-gradient(145deg, var(--vrts-gold), #a0872e); border-color: var(--vrts-gold); color: #0b0c0f; font-weight: 700; box-shadow: 0 0 14px var(--vrts-gold-glow); }
+        .cp:hover { background: linear-gradient(145deg, #e8c84c, var(--vrts-gold)); box-shadow: 0 0 24px var(--vrts-gold-glow); }
+      </style>
+
+      <script>
+      (function(){
+        let cExpr = '', cMode = 'deg', cHyp = false;
+        const cDisplay = () => document.getElementById('calcExpression');
+        const cResult = () => document.getElementById('calcResult');
+
+        window.calcSetMode = function(m) {
+          cMode = m;
+          document.querySelectorAll('.calc-mode[data-mode]').forEach(b => b.classList.toggle('active', b.dataset.mode === m));
+          calcPreview();
+        };
+        window.calcToggleHyp = function(btn) { cHyp = !cHyp; btn.classList.toggle('active', cHyp); calcPreview(); };
+        window.calcInput = function(v) { cExpr += v; cDisplay().textContent = cExpr; calcPreview(); };
+        window.calcClearAll = function() { cExpr=''; cDisplay().textContent=''; cResult().textContent='0'; cResult().classList.remove('glow'); };
+        window.calcClearEntry = function() { cExpr=''; cDisplay().textContent=''; cResult().textContent='0'; cResult().classList.remove('glow'); };
+        window.calcBackspace = function() {
+          if(!cExpr) return;
+          const funcs = ['sin(','cos(','tan(','sin⁻¹(','cos⁻¹(','tan⁻¹(','ln(','log(','√(','10^'];
+          let rm = false;
+          for(let f of funcs){if(cExpr.endsWith(f)){cExpr=cExpr.slice(0,-f.length);rm=true;break;}}
+          if(!rm) cExpr=cExpr.slice(0,-1);
+          cDisplay().textContent=cExpr;
+          if(!cExpr){cResult().textContent='0';cResult().classList.remove('glow');}else{calcPreview();}
+        };
+
+        function factorial(n){if(n<0||!Number.isInteger(n))return NaN;if(n<=1)return 1;let f=1;for(let i=2;i<=n;i++)f*=i;return f;}
+        function safeEval(expr){
+          let e=expr.replace(/×/g,'*').replace(/÷/g,'/').replace(/−/g,'-').replace(/π/g,`(${Math.PI})`).replace(/e(?![a-z])/g,`(${Math.E})`)
+            .replace(/sin⁻¹\(/g,'asin(').replace(/cos⁻¹\(/g,'acos(').replace(/tan⁻¹\(/g,'atan(')
+            .replace(/√\(/g,'Math.sqrt(').replace(/ln\(/g,'Math.log(').replace(/log\(/g,'Math.log10(')
+            .replace(/\^/g,'**').replace(/(\d+(?:\.\d+)?)!/g,(m,n)=>factorial(parseFloat(n)))
+            .replace(/(\d+(?:\.\d+)?)%/g,(m,n)=>parseFloat(n)/100);
+          const prefix = `"use strict";
+            const toR=(v)=>${cMode==='deg'?'v*Math.PI/180':'v'};
+            const fromR=(v)=>${cMode==='deg'?'v*180/Math.PI':'v'};
+            const sin=(x)=>${cHyp?'Math.sinh(x)':'Math.sin(toR(x))'};
+            const cos=(x)=>${cHyp?'Math.cosh(x)':'Math.cos(toR(x))'};
+            const tan=(x)=>${cHyp?'Math.tanh(x)':'Math.tan(toR(x))'};
+            const asin=(x)=>${cHyp?'Math.asinh(x)':'fromR(Math.asin(x))'};
+            const acos=(x)=>${cHyp?'Math.acosh(x)':'fromR(Math.acos(x))'};
+            const atan=(x)=>${cHyp?'Math.atanh(x)':'fromR(Math.atan(x))'};
+            return (${e});`;
+          return Function(prefix)();
+        }
+        function fmt(r){
+          if(typeof r!=='number')return r;
+          if(!isFinite(r))return r===Infinity?'∞':r===-Infinity?'-∞':'NaN';
+          if(Math.abs(r)<1e-15)return '0';
+          if(Math.abs(r)>999999999||(Math.abs(r)<0.000001&&r!==0))return r.toExponential(8).replace(/\.?0+e/,'e');
+          let s=parseFloat(r.toPrecision(12)).toString();
+          if(s.includes('e'))s=r.toExponential(8).replace(/\.?0+e/,'e');
+          return s;
+        }
+        function calcPreview(){if(!cExpr)return;try{cResult().textContent=fmt(safeEval(cExpr));}catch(e){}}
+        window.calcEquals = function(){
+          if(!cExpr)return;
+          try{
+            let r=fmt(safeEval(cExpr));
+            cResult().textContent=r; cResult().classList.add('glow');
+            if(r!=='NaN'&&r!=='∞'&&r!=='-∞'&&r!=='Error'){cExpr=r;cDisplay().textContent='';}
+          }catch(e){cResult().textContent='Error';cResult().classList.remove('glow');}
+        };
+      })();
+      </script>
 
       <!-- Settings Modal (Bottom Sheet) -->
       <div class="bottom-sheet glass-panel" id="settingsModal">

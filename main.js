@@ -369,6 +369,8 @@ class Dashboard {
   }
 
   openModal(modal) {
+    // Close any currently open modal first
+    this.closeAllModals();
     this.overlay.classList.add('active');
     modal.classList.add('active');
     // Auto-focus the relevant input after animation
