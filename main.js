@@ -1,10 +1,12 @@
 import './style.css'
 
-const SUPABASE_URL = 'https://xiprgjpgbsytamemoraa.supabase.co';
-const SUPABASE_KEY = 'sb_publishable_r5_04Q-bfvxQps44uXqX2g_EL_-_kFS';
+const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL || 'https://xiprgjpgbsytamemoraa.supabase.co';
+const SUPABASE_KEY = import.meta.env.VITE_SUPABASE_KEY || '';
 let supabase = null;
-if (window.supabase) {
+if (window.supabase && SUPABASE_KEY) {
   supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+} else if (window.supabase) {
+  console.warn("Supabase key is not configured. Cloud sync disabled.");
 }
 
 class Dashboard {
@@ -85,7 +87,7 @@ class Dashboard {
       
       if (data && data.state) {
         const state = data.state;
-        if (!state || typeof state !== 'object' || !Array.isArray(state.transactions) || typeof state.config !== 'object') {
+        if (!this.validateState(state)) {
           this.showToast('Backup data is corrupted or invalid', true);
           return;
         }
@@ -187,6 +189,7 @@ class Dashboard {
     this.overlay = document.getElementById('overlay');
     this.openSettingsBtn = document.getElementById('openSettingsBtn');
     this.openCalculatorBtn = document.getElementById('openCalculatorBtn');
+    this.exportCsvBtn = document.getElementById('exportCsvBtn');
     this.closeSettingsBtn = document.getElementById('closeSettingsBtn');
     this.clearTodayBtn = document.getElementById('clearTodayBtn');
     this.btnBackup = document.getElementById('btnBackup');
@@ -243,6 +246,9 @@ class Dashboard {
     }
     if (this.openCalculatorBtn) {
       this.openCalculatorBtn.addEventListener('click', () => this.openModal(this.calculatorModal));
+    }
+    if (this.exportCsvBtn) {
+      this.exportCsvBtn.addEventListener('click', () => this.exportToCsv());
     }
     const closeCalcBtn = document.getElementById('closeCalcBtn');
     if (closeCalcBtn) closeCalcBtn.addEventListener('click', () => this.closeAllModals());
@@ -477,6 +483,40 @@ class Dashboard {
       `;
       this.historyList.appendChild(item);
     });
+  }
+
+  exportToCsv() {
+    let csvContent = "Date,Type,Description,Amount,Net Profit (Daily)\n";
+
+    // Add archived days
+    if (this.state.weeklyLog) {
+      Object.keys(this.state.weeklyLog).sort().forEach(dateStr => {
+        const day = this.state.weeklyLog[dateStr];
+        csvContent += `${dateStr},Summary,Daily Gross,${day.gross.toFixed(2)},\n`;
+        csvContent += `${dateStr},Summary,Daily Expenses,${day.expenses.toFixed(2)},\n`;
+        csvContent += `${dateStr},Summary,Net Profit,,${day.net.toFixed(2)}\n`;
+      });
+    }
+
+    // Add current transactions
+    if (this.state.transactions) {
+      this.state.transactions.forEach(t => {
+        const dateStr = new Date(t.timestamp).toLocaleDateString();
+        const desc = t.description ? t.description.replace(/"/g, '""') : '';
+        csvContent += `${dateStr},${t.type},"${desc}",${t.amount.toFixed(2)},\n`;
+      });
+    }
+
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.setAttribute("href", url);
+    link.setAttribute("download", `sovereign_dash_export_${new Date().toISOString().split('T')[0]}.csv`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    
+    this.showToast('CSV Exported! 📊');
   }
 
   getWeeklyData() {
