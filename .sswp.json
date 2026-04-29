@@ -1,0 +1,94 @@
+{
+  "version": "1.0.0",
+  "timestamp": "2026-04-29T21:04:15.197Z",
+  "target": {
+    "name": "veritas-dash",
+    "repo": "/mnt/c/Veritas_Lab/veritas-dash",
+    "commitHash": "369b16a89f560f22e24f0f5fdc9c3efb056d95f5",
+    "branch": "main"
+  },
+  "environment": {
+    "nodeVersion": "v22.14.0",
+    "os": "linux",
+    "arch": "x64",
+    "ci": false
+  },
+  "dependencies": [
+    {
+      "name": "vite",
+      "version": "8.0.4",
+      "resolved": "/mnt/c/Veritas_Lab/veritas-dash/node_modules/vite",
+      "integrity": "fe0130f79f087569",
+      "suspicious": false,
+      "riskScore": 0.1
+    }
+  ],
+  "gates": [
+    {
+      "gate": "GIT_INTEGRITY",
+      "status": "FAIL",
+      "evidence": "Modified files: 1",
+      "durationMs": 72
+    },
+    {
+      "gate": "LOCKFILE",
+      "status": "PASS",
+      "evidence": "package-lock.json present",
+      "durationMs": 1
+    },
+    {
+      "gate": "DETERMINISTIC_BUILD",
+      "status": "FAIL",
+      "evidence": "Build failed: file:///mnt/c/Veritas_Lab/veritas-dash/node_modules/rolldown/dist/shared/binding-s-V_wTpj.mjs:507\n\t\tif (loadErrors.length > 0) throw new Error(\"Cannot find native binding. npm has a bug related to opt",
+      "durationMs": 535
+    },
+    {
+      "gate": "TEST_PASS",
+      "status": "FAIL",
+      "evidence": "Tests failed: npm error Missing script: \"test\"\nnpm error\nnpm error To see a list of scripts, run:\nnpm error   npm run\nnpm error A complete log of this run can be found in: /home/veritas/.npm/_logs/2026-04-29T21_04_",
+      "durationMs": 139
+    },
+    {
+      "gate": "LINT",
+      "status": "PASS",
+      "evidence": "npx passed",
+      "durationMs": 2170
+    }
+  ],
+  "adversarial": {
+    "totalPackages": 1,
+    "suspiciousPackages": 0,
+    "probes": [
+      {
+        "package": "vite",
+        "probe": "TYPO_SQUATTING",
+        "result": "PASS",
+        "detail": "Name heuristic clean"
+      },
+      {
+        "package": "vite",
+        "probe": "VERSION_ANOMALY",
+        "result": "PASS",
+        "detail": "Pinned: 8.0.4"
+      },
+      {
+        "package": "vite",
+        "probe": "METADATA_INTEGRITY",
+        "result": "PASS",
+        "detail": "Hash: fe0130f79f087569"
+      },
+      {
+        "package": "system",
+        "probe": "KIMI_REASONING",
+        "result": "INCONCLUSIVE",
+        "detail": "OLLAMA_CLOUD_API_KEY is not set. Skipping Kimi adversarial analysis."
+      }
+    ],
+    "overallRisk": 0
+  },
+  "seal": {
+    "chainHash": "88f4978f1273ccc3d37275bd16c1760fbde0c2e6ec27167710eec0bb2916f962",
+    "sequence": 227
+  },
+  "signature": "1d488cabed99f6e44e9df5c1b8f353906c5178f3ea98e568528e31db4d6f9ad1"
+}
