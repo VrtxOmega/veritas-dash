@@ -1,0 +1,2148 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ShiftForge by Veritas — Smart Restaurant Scheduling</title>
+<meta name="description" content="AI-powered employee scheduling with compatibility optimization. Built by Veritas Lab.">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' rx='6' fill='%230a0a0f'/><text x='16' y='23' text-anchor='middle' font-size='20' font-family='serif' font-weight='bold' fill='%23d4a843'>Ω</text></svg>">
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=Orbitron:wght@700;900&display=swap');
+
+  :root {
+    --gold: #d4a843;
+    --gold-light: #f0d078;
+    --gold-dim: #a8852f;
+    --gold-glow: rgba(212,168,67,0.25);
+    --bg-primary: #0a0a0f;
+    --bg-secondary: #111118;
+    --bg-card: #16161f;
+    --bg-card-hover: #1c1c28;
+    --bg-input: #1a1a25;
+    --border: #2a2a3a;
+    --border-gold: rgba(212,168,67,0.3);
+    --text: #e8e6e3;
+    --text-dim: #8a8a9a;
+    --text-bright: #ffffff;
+    --green: #4caf50;
+    --green-bg: rgba(76,175,80,0.12);
+    --red: #ef5350;
+    --red-bg: rgba(239,83,80,0.12);
+    --blue: #42a5f5;
+    --blue-bg: rgba(66,165,245,0.12);
+    --purple: #ab47bc;
+    --purple-bg: rgba(171,71,188,0.12);
+    --orange: #ffa726;
+    --orange-bg: rgba(255,167,38,0.12);
+    --shadow: 0 4px 24px rgba(0,0,0,0.4);
+    --shadow-gold: 0 0 30px rgba(212,168,67,0.08);
+    --radius: 12px;
+    --radius-sm: 8px;
+    --transition: 0.2s ease;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    font-family: 'Inter', system-ui, -apple-system, sans-serif;
+    background: var(--bg-primary);
+    color: var(--text);
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  /* Subtle animated background */
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background:
+      radial-gradient(ellipse at 20% 0%, rgba(212,168,67,0.04) 0%, transparent 50%),
+      radial-gradient(ellipse at 80% 100%, rgba(212,168,67,0.03) 0%, transparent 50%);
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  ::selection { background: var(--gold); color: var(--bg-primary); }
+  ::-webkit-scrollbar { width: 8px; height: 8px; }
+  ::-webkit-scrollbar-track { background: var(--bg-secondary); }
+  ::-webkit-scrollbar-thumb { background: #333; border-radius: 4px; }
+  ::-webkit-scrollbar-thumb:hover { background: var(--gold-dim); }
+
+  /* HEADER */
+  header {
+    position: sticky;
+    top: 0;
+    z-index: 100;
+    background: linear-gradient(180deg, var(--bg-primary) 0%, rgba(10,10,15,0.95) 100%);
+    backdrop-filter: blur(20px);
+    border-bottom: 1px solid var(--border);
+    padding: 0 32px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    height: 64px;
+  }
+
+  .logo {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+  }
+  .logo-icon {
+    width: 36px;
+    height: 36px;
+    background: linear-gradient(135deg, var(--gold), var(--gold-dim));
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 18px;
+    font-weight: 900;
+    color: var(--bg-primary);
+    font-family: 'Orbitron', monospace;
+    box-shadow: 0 0 20px rgba(212,168,67,0.3);
+  }
+  .logo-text {
+    display: flex;
+    flex-direction: column;
+  }
+  .logo-text h1 {
+    font-family: 'Orbitron', monospace;
+    font-size: 1.1rem;
+    font-weight: 900;
+    color: var(--gold);
+    letter-spacing: 2px;
+    line-height: 1.2;
+  }
+  .logo-text .subtitle {
+    font-size: 0.65rem;
+    color: var(--text-dim);
+    letter-spacing: 1px;
+    text-transform: uppercase;
+  }
+
+  .header-badge {
+    font-size: 0.65rem;
+    color: var(--text-dim);
+    padding: 4px 12px;
+    border: 1px solid var(--border);
+    border-radius: 20px;
+    letter-spacing: 0.5px;
+  }
+
+  /* NAV */
+  nav {
+    display: flex;
+    gap: 2px;
+    padding: 8px 32px;
+    background: var(--bg-secondary);
+    border-bottom: 1px solid var(--border);
+    overflow-x: auto;
+  }
+  nav button {
+    padding: 10px 20px;
+    border: none;
+    background: transparent;
+    cursor: pointer;
+    font-size: 0.85rem;
+    font-weight: 500;
+    border-radius: var(--radius-sm);
+    color: var(--text-dim);
+    transition: all var(--transition);
+    white-space: nowrap;
+    font-family: inherit;
+    position: relative;
+  }
+  nav button:hover { color: var(--text); background: var(--bg-card); }
+  nav button.active {
+    color: var(--gold);
+    background: rgba(212,168,67,0.08);
+    font-weight: 600;
+  }
+  nav button.active::after {
+    content: '';
+    position: absolute;
+    bottom: -1px;
+    left: 20%;
+    right: 20%;
+    height: 2px;
+    background: var(--gold);
+    border-radius: 1px;
+  }
+
+  /* MAIN */
+  main {
+    padding: 28px 32px;
+    max-width: 1500px;
+    margin: 0 auto;
+    position: relative;
+    z-index: 1;
+  }
+
+  .page { display: none; animation: fadeIn 0.3s ease; }
+  .page.active { display: block; }
+  @keyframes fadeIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
+
+  /* CARDS */
+  .card {
+    background: var(--bg-card);
+    border-radius: var(--radius);
+    padding: 24px;
+    border: 1px solid var(--border);
+    margin-bottom: 20px;
+    transition: border-color var(--transition);
+  }
+  .card:hover { border-color: var(--border-gold); }
+  .card-gold {
+    border-color: var(--border-gold);
+    box-shadow: var(--shadow-gold);
+  }
+  .card h2 {
+    font-size: 1.1rem;
+    font-weight: 700;
+    margin-bottom: 16px;
+    color: var(--gold);
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  .card h2 .icon { font-size: 1.2rem; }
+  .card h3 { font-size: 0.95rem; margin-bottom: 12px; color: var(--text-bright); }
+
+  /* BUTTONS */
+  .btn {
+    padding: 10px 20px;
+    border: none;
+    border-radius: var(--radius-sm);
+    cursor: pointer;
+    font-size: 0.85rem;
+    font-weight: 600;
+    font-family: inherit;
+    transition: all var(--transition);
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+  }
+  .btn-gold {
+    background: linear-gradient(135deg, var(--gold), var(--gold-dim));
+    color: var(--bg-primary);
+    box-shadow: 0 2px 12px rgba(212,168,67,0.3);
+  }
+  .btn-gold:hover { box-shadow: 0 4px 20px rgba(212,168,67,0.5); transform: translateY(-1px); }
+  .btn-outline {
+    background: transparent;
+    border: 1px solid var(--border);
+    color: var(--text);
+  }
+  .btn-outline:hover { border-color: var(--gold); color: var(--gold); }
+  .btn-danger { background: var(--red-bg); color: var(--red); border: 1px solid rgba(239,83,80,0.2); }
+  .btn-danger:hover { background: rgba(239,83,80,0.2); }
+  .btn-green { background: var(--green-bg); color: var(--green); border: 1px solid rgba(76,175,80,0.2); }
+  .btn-green:hover { background: rgba(76,175,80,0.2); }
+  .btn-sm { padding: 6px 14px; font-size: 0.78rem; }
+  .btn-icon { width: 34px; height: 34px; padding: 0; display: flex; align-items: center; justify-content: center; border-radius: 8px; }
+
+  /* FORMS */
+  .form-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+    gap: 16px;
+  }
+  .form-group { display: flex; flex-direction: column; gap: 6px; }
+  .form-group label {
+    font-size: 0.72rem;
+    font-weight: 600;
+    color: var(--text-dim);
+    text-transform: uppercase;
+    letter-spacing: 0.8px;
+  }
+  .form-group input, .form-group select, .form-group textarea {
+    padding: 10px 14px;
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    font-size: 0.88rem;
+    font-family: inherit;
+    background: var(--bg-input);
+    color: var(--text);
+    transition: border-color var(--transition), box-shadow var(--transition);
+  }
+  .form-group input:focus, .form-group select:focus, .form-group textarea:focus {
+    outline: none;
+    border-color: var(--gold);
+    box-shadow: 0 0 0 3px var(--gold-glow);
+  }
+  .form-group select option { background: var(--bg-card); color: var(--text); }
+
+  /* TAGS */
+  .tag {
+    display: inline-block;
+    padding: 3px 10px;
+    border-radius: 20px;
+    font-size: 0.72rem;
+    font-weight: 600;
+    margin: 2px;
+    letter-spacing: 0.3px;
+  }
+  .tag-strength { background: var(--green-bg); color: var(--green); border: 1px solid rgba(76,175,80,0.15); }
+  .tag-weakness { background: var(--red-bg); color: var(--red); border: 1px solid rgba(239,83,80,0.15); }
+  .tag-personality { background: var(--blue-bg); color: var(--blue); border: 1px solid rgba(66,165,245,0.15); }
+  .tag-role { background: var(--purple-bg); color: var(--purple); border: 1px solid rgba(171,71,188,0.15); }
+  .tag-gold { background: rgba(212,168,67,0.1); color: var(--gold); border: 1px solid rgba(212,168,67,0.2); }
+
+  /* STATS */
+  .stats-row { display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 16px; margin-bottom: 24px; }
+  .stat-card {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 20px;
+    text-align: center;
+    transition: all var(--transition);
+  }
+  .stat-card:hover { border-color: var(--border-gold); box-shadow: var(--shadow-gold); }
+  .stat-card .num {
+    font-size: 2.2rem;
+    font-weight: 800;
+    background: linear-gradient(135deg, var(--gold-light), var(--gold));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    line-height: 1.2;
+  }
+  .stat-card .label { font-size: 0.75rem; color: var(--text-dim); margin-top: 4px; text-transform: uppercase; letter-spacing: 0.5px; }
+
+  /* EMPLOYEE GRID */
+  .employee-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(340px, 1fr));
+    gap: 16px;
+  }
+  .employee-card {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 20px;
+    transition: all var(--transition);
+    position: relative;
+    overflow: hidden;
+  }
+  .employee-card::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 3px;
+    background: linear-gradient(90deg, var(--gold), transparent);
+    opacity: 0;
+    transition: opacity var(--transition);
+  }
+  .employee-card:hover { border-color: var(--border-gold); transform: translateY(-2px); box-shadow: var(--shadow); }
+  .employee-card:hover::before { opacity: 1; }
+
+  .emp-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 10px; }
+  .emp-header .name { font-size: 1.05rem; font-weight: 700; color: var(--text-bright); }
+  .emp-header .role-badge { font-size: 0.72rem; }
+  .emp-meta { display: flex; gap: 8px; margin-bottom: 10px; flex-wrap: wrap; }
+  .emp-tags { margin-bottom: 10px; }
+  .emp-avail { display: flex; gap: 4px; margin-top: 10px; }
+  .emp-avail .dot {
+    width: 30px;
+    height: 30px;
+    border-radius: 6px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.6rem;
+    font-weight: 700;
+    color: var(--bg-primary);
+    transition: all var(--transition);
+  }
+  .dot-available { background: var(--green); }
+  .dot-unavailable { background: #333; color: #666; }
+  .dot-preferred { background: var(--gold); }
+  .dot-mixed { background: var(--orange); }
+  .emp-actions { display: flex; gap: 8px; margin-top: 14px; padding-top: 14px; border-top: 1px solid var(--border); }
+
+  /* AVAILABILITY TABLE */
+  .avail-wrap { overflow-x: auto; border-radius: var(--radius); border: 1px solid var(--border); }
+  .avail-table { width: 100%; border-collapse: collapse; }
+  .avail-table th, .avail-table td {
+    padding: 8px 6px;
+    text-align: center;
+    font-size: 0.8rem;
+    border: 1px solid var(--border);
+  }
+  .avail-table thead th {
+    background: var(--bg-secondary);
+    color: var(--gold);
+    font-weight: 700;
+    font-size: 0.72rem;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    position: sticky;
+    top: 0;
+    z-index: 2;
+  }
+  .avail-table .emp-name-cell {
+    font-weight: 600;
+    white-space: nowrap;
+    text-align: left;
+    padding-left: 14px;
+    position: sticky;
+    left: 0;
+    background: var(--bg-card);
+    z-index: 1;
+    min-width: 120px;
+  }
+  .avail-table td { cursor: pointer; transition: all 0.15s; user-select: none; }
+  .avail-table td:not(.emp-name-cell):hover { filter: brightness(1.3); }
+  .avail-yes { background: rgba(76,175,80,0.2); color: var(--green); font-weight: 700; }
+  .avail-prefer { background: rgba(212,168,67,0.2); color: var(--gold); font-weight: 700; }
+  .avail-no { background: rgba(239,83,80,0.1); color: #666; }
+
+  /* COMPATIBILITY */
+  .compat-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 10px; }
+  .compat-pair {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 12px 16px;
+    background: var(--bg-input);
+    border-radius: var(--radius-sm);
+    border: 1px solid var(--border);
+    transition: border-color var(--transition);
+  }
+  .compat-pair:hover { border-color: var(--border-gold); }
+  .compat-pair .names { flex: 1; font-weight: 600; font-size: 0.88rem; }
+  .compat-pair .arrow { color: var(--text-dim); font-size: 0.9rem; }
+  .compat-pair select {
+    padding: 6px 10px;
+    border-radius: 6px;
+    border: 1px solid var(--border);
+    background: var(--bg-card);
+    color: var(--text);
+    font-family: inherit;
+    font-size: 0.82rem;
+    font-weight: 600;
+    cursor: pointer;
+  }
+
+  /* SCHEDULE TABLE */
+  .schedule-wrap { overflow-x: auto; border-radius: var(--radius); border: 1px solid var(--border); }
+  .schedule-table { width: 100%; border-collapse: collapse; }
+  .schedule-table th {
+    padding: 12px 10px;
+    background: linear-gradient(135deg, var(--gold-dim), var(--gold));
+    color: var(--bg-primary);
+    font-weight: 700;
+    font-size: 0.82rem;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    text-align: center;
+    border: 1px solid var(--gold-dim);
+  }
+  .schedule-table td {
+    padding: 10px 8px;
+    border: 1px solid var(--border);
+    font-size: 0.82rem;
+    vertical-align: top;
+    min-width: 140px;
+    background: var(--bg-card);
+  }
+  .schedule-table .shift-label {
+    font-weight: 700;
+    background: var(--bg-secondary);
+    white-space: nowrap;
+    text-align: right;
+    padding-right: 14px;
+    color: var(--gold);
+    min-width: 100px;
+  }
+  .schedule-emp {
+    display: inline-block;
+    padding: 4px 10px;
+    margin: 2px;
+    border-radius: 6px;
+    font-size: 0.75rem;
+    font-weight: 600;
+    background: var(--green-bg);
+    color: var(--green);
+    border: 1px solid rgba(76,175,80,0.2);
+    transition: all var(--transition);
+  }
+  .schedule-emp:hover { transform: scale(1.05); }
+  .schedule-emp.warn { background: var(--orange-bg); color: var(--orange); border-color: rgba(255,167,38,0.2); }
+  .schedule-emp.conflict { background: var(--red-bg); color: var(--red); border-color: rgba(239,83,80,0.2); }
+  .schedule-emp.preferred { background: rgba(212,168,67,0.1); color: var(--gold); border-color: rgba(212,168,67,0.2); }
+
+  /* SCORE BAR */
+  .score-section { display: flex; align-items: center; gap: 16px; flex-wrap: wrap; }
+  .score-ring {
+    width: 72px;
+    height: 72px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.3rem;
+    font-weight: 800;
+    border: 3px solid;
+    flex-shrink: 0;
+  }
+  .score-details { flex: 1; }
+  .score-details .score-label { font-size: 0.9rem; font-weight: 700; margin-bottom: 4px; }
+  .score-details .score-sub { font-size: 0.8rem; color: var(--text-dim); }
+
+  /* SETTINGS */
+  .shift-config-row {
+    display: flex;
+    gap: 10px;
+    align-items: center;
+    margin-bottom: 8px;
+    padding: 10px 14px;
+    background: var(--bg-input);
+    border-radius: var(--radius-sm);
+    border: 1px solid var(--border);
+    flex-wrap: wrap;
+  }
+  .shift-config-row input {
+    padding: 8px 12px;
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    background: var(--bg-card);
+    color: var(--text);
+    font-family: inherit;
+    font-size: 0.85rem;
+  }
+  .shift-config-row input:focus { outline: none; border-color: var(--gold); }
+
+  .gen-options {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+    gap: 16px;
+    margin-bottom: 20px;
+  }
+
+  .empty-state {
+    text-align: center;
+    padding: 60px 24px;
+    color: var(--text-dim);
+  }
+  .empty-state .empty-icon { font-size: 3rem; margin-bottom: 16px; opacity: 0.3; }
+  .empty-state p { font-size: 1rem; margin-bottom: 16px; }
+
+  /* MODAL */
+  .modal-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.7);
+    backdrop-filter: blur(4px);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 1000;
+    animation: fadeIn 0.2s ease;
+  }
+  .modal {
+    background: var(--bg-card);
+    border: 1px solid var(--border-gold);
+    border-radius: 16px;
+    padding: 32px;
+    max-width: 720px;
+    width: 92%;
+    max-height: 85vh;
+    overflow-y: auto;
+    box-shadow: 0 16px 64px rgba(0,0,0,0.5), var(--shadow-gold);
+  }
+  .modal h2 { margin-bottom: 20px; color: var(--gold); }
+  .modal .form-actions { display: flex; gap: 10px; margin-top: 24px; justify-content: flex-end; }
+
+  /* CHIP INPUT */
+  .chip-input {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px;
+    padding: 8px;
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    min-height: 44px;
+    align-items: center;
+    cursor: text;
+    background: var(--bg-input);
+    transition: border-color var(--transition);
+  }
+  .chip-input:focus-within { border-color: var(--gold); box-shadow: 0 0 0 3px var(--gold-glow); }
+  .chip-input .chip {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    padding: 3px 10px;
+    border-radius: 6px;
+    font-size: 0.78rem;
+    font-weight: 600;
+  }
+  .chip-input .chip button { background: none; border: none; cursor: pointer; font-size: 1rem; line-height: 1; opacity: 0.5; color: inherit; }
+  .chip-input .chip button:hover { opacity: 1; }
+  .chip-input input { border: none; outline: none; flex: 1; min-width: 100px; font-size: 0.85rem; padding: 4px; background: transparent; color: var(--text); font-family: inherit; }
+  .chip-input input::placeholder { color: var(--text-dim); }
+  .chip-strength .chip { background: var(--green-bg); color: var(--green); }
+  .chip-weakness .chip { background: var(--red-bg); color: var(--red); }
+  .chip-personality .chip { background: var(--blue-bg); color: var(--blue); }
+
+  .preset-btns { display: flex; gap: 4px; flex-wrap: wrap; margin-top: 6px; }
+  .preset-btn {
+    padding: 3px 10px;
+    font-size: 0.68rem;
+    font-weight: 500;
+    background: var(--bg-input);
+    border: 1px solid var(--border);
+    border-radius: 20px;
+    color: var(--text-dim);
+    cursor: pointer;
+    font-family: inherit;
+    transition: all var(--transition);
+  }
+  .preset-btn:hover { border-color: var(--gold); color: var(--gold); }
+
+  /* HOURS SUMMARY */
+  .hours-grid { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 16px; }
+  .hours-chip {
+    padding: 6px 12px;
+    border-radius: 8px;
+    font-size: 0.78rem;
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    background: var(--bg-input);
+    border: 1px solid var(--border);
+  }
+  .hours-chip .bar-mini { width: 40px; height: 4px; background: #333; border-radius: 2px; overflow: hidden; }
+  .hours-chip .bar-mini-fill { height: 100%; border-radius: 2px; }
+
+  /* FOOTER */
+  footer {
+    text-align: center;
+    padding: 32px;
+    color: var(--text-dim);
+    font-size: 0.75rem;
+    border-top: 1px solid var(--border);
+    margin-top: 48px;
+  }
+  footer a { color: var(--gold); text-decoration: none; }
+  footer a:hover { text-decoration: underline; }
+
+  /* PRINT */
+  @media print {
+    body { background: white; color: black; }
+    body::before, header, nav, footer, .btn, .emp-actions { display: none !important; }
+    main { padding: 0; }
+    .card { box-shadow: none; border-color: #ccc; }
+    .schedule-table th { background: #333 !important; color: white !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+    .schedule-emp { border: 1px solid #999; background: #f0f0f0 !important; color: #333 !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+  }
+
+  @media (max-width: 768px) {
+    header { padding: 0 16px; height: 56px; }
+    nav { padding: 6px 12px; gap: 2px; }
+    nav button { padding: 8px 14px; font-size: 0.8rem; }
+    main { padding: 16px; }
+    .form-grid { grid-template-columns: 1fr; }
+    .employee-grid { grid-template-columns: 1fr; }
+    .gen-options { grid-template-columns: 1fr; }
+    .modal { padding: 20px; width: 96%; }
+    .stats-row { grid-template-columns: repeat(2, 1fr); }
+  }
+
+  /* === PHASE 1: Toast Notifications === */
+  .toast-container { position:fixed; top:20px; right:20px; z-index:10000; display:flex; flex-direction:column; gap:10px; pointer-events:none; }
+  .toast { pointer-events:auto; padding:14px 20px; border-radius:var(--radius-sm); font-size:0.88rem; font-weight:500; color:var(--text-bright); backdrop-filter:blur(16px); border:1px solid rgba(255,255,255,0.08); box-shadow:var(--shadow); animation:toastIn 0.35s ease, toastOut 0.35s ease 2.8s forwards; display:flex; align-items:center; gap:10px; max-width:380px; }
+  .toast-success { background:rgba(76,175,80,0.92); border-color:rgba(76,175,80,0.4); }
+  .toast-error { background:rgba(239,83,80,0.92); border-color:rgba(239,83,80,0.4); }
+  .toast-warning { background:rgba(255,167,38,0.92); border-color:rgba(255,167,38,0.4); color:#1a1a25; }
+  .toast-info { background:rgba(66,165,245,0.92); border-color:rgba(66,165,245,0.4); }
+  @keyframes toastIn { from { transform:translateX(120%); opacity:0; } to { transform:translateX(0); opacity:1; } }
+  @keyframes toastOut { from { opacity:1; transform:translateX(0); } to { opacity:0; transform:translateX(120%); } }
+
+  /* === PHASE 1: Last-saved indicator === */
+  .last-saved { font-size:0.72rem; color:var(--text-dim); opacity:0.7; transition:opacity 0.3s; }
+  .last-saved.just-saved { opacity:1; color:var(--green); }
+
+  /* === PHASE 1: Inline confirm === */
+  .inline-confirm { display:inline-flex; gap:6px; align-items:center; animation:fadeIn 0.2s ease; }
+  .inline-confirm .confirm-msg { font-size:0.78rem; color:var(--red); font-weight:600; }
+  .inline-confirm button { font-size:0.72rem; padding:3px 10px; border-radius:4px; border:1px solid; cursor:pointer; font-weight:600; font-family:inherit; }
+  .inline-confirm .confirm-yes { background:var(--red); color:white; border-color:var(--red); }
+  .inline-confirm .confirm-no { background:transparent; color:var(--text-dim); border-color:var(--border); }
+
+  /* === PHASE 3: Micro-animations === */
+  @keyframes fadeIn { from { opacity:0; transform:translateY(8px); } to { opacity:1; transform:translateY(0); } }
+  @keyframes fadeInUp { from { opacity:0; transform:translateY(16px); } to { opacity:1; transform:translateY(0); } }
+  @keyframes countUp { from { opacity:0; transform:scale(0.8); } to { opacity:1; transform:scale(1); } }
+  .stat-card { animation:fadeInUp 0.4s ease backwards; }
+  .stat-card:nth-child(1) { animation-delay:0.05s; } .stat-card:nth-child(2) { animation-delay:0.1s; }
+  .stat-card:nth-child(3) { animation-delay:0.15s; } .stat-card:nth-child(4) { animation-delay:0.2s; }
+  .stat-card:nth-child(5) { animation-delay:0.25s; } .stat-card:nth-child(6) { animation-delay:0.3s; }
+  .employee-card { animation:fadeIn 0.3s ease backwards; }
+
+  /* === PHASE 2: Schedule History === */
+  .history-item { display:flex; justify-content:space-between; align-items:center; padding:12px 16px; background:var(--bg-input); border:1px solid var(--border); border-radius:var(--radius-sm); margin-bottom:8px; transition:border-color var(--transition); cursor:pointer; }
+  .history-item:hover { border-color:var(--gold-dim); }
+  .history-item .hi-date { font-weight:600; color:var(--text); font-size:0.9rem; }
+  .history-item .hi-quality { font-size:0.82rem; font-weight:700; }
+  .history-item .hi-actions { display:flex; gap:6px; }
+
+  /* === PHASE 2: Labor Cost === */
+  .cost-summary { background:linear-gradient(135deg, rgba(212,168,67,0.08), rgba(212,168,67,0.02)); border:1px solid var(--border-gold); border-radius:var(--radius-sm); padding:16px; margin-top:16px; }
+  .cost-total { font-size:1.4rem; font-weight:800; color:var(--gold); font-family:'Orbitron',monospace; }
+
+  /* === PHASE 2: Manual Override === */
+  .schedule-emp.removable { cursor:pointer; position:relative; }
+  .schedule-emp.removable:hover { opacity:0.7; text-decoration:line-through; }
+  .add-emp-btn { display:inline-block; padding:2px 8px; margin:2px; border-radius:4px; font-size:0.72rem; font-weight:700; background:transparent; border:1px dashed var(--border); color:var(--text-dim); cursor:pointer; transition:all var(--transition); }
+  .add-emp-btn:hover { border-color:var(--gold); color:var(--gold); }
+
+  /* === PHASE 2: Employee Schedule View === */
+  .emp-schedule-mini { display:grid; grid-template-columns:repeat(7,1fr); gap:4px; margin-top:8px; }
+  .emp-schedule-mini .esm-day { font-size:0.68rem; text-align:center; padding:4px 2px; background:var(--bg-input); border-radius:4px; border:1px solid var(--border); }
+  .emp-schedule-mini .esm-day.has-shift { background:var(--green-bg); border-color:rgba(76,175,80,0.3); }
+  .emp-schedule-mini .esm-day .esm-label { font-weight:700; color:var(--text-dim); margin-bottom:2px; }
+  .emp-schedule-mini .esm-day .esm-shifts { font-size:0.62rem; color:var(--green); }
+
+  /* === PHASE 3: Progress bar === */
+  .gen-progress { display:none; margin:16px 0; }
+  .gen-progress.active { display:block; }
+  .progress-bar { height:6px; background:var(--bg-input); border-radius:3px; overflow:hidden; }
+  .progress-fill { height:100%; background:linear-gradient(90deg, var(--gold-dim), var(--gold)); border-radius:3px; transition:width 0.15s ease; }
+  .progress-label { font-size:0.78rem; color:var(--text-dim); margin-top:6px; text-align:center; }
+
+  /* === PHASE 3: Keyboard shortcut hint === */
+  .kbd-hint { display:inline-block; padding:1px 5px; font-size:0.65rem; background:var(--bg-input); border:1px solid var(--border); border-radius:3px; color:var(--text-dim); font-family:monospace; margin-left:6px; vertical-align:middle; }
+
+  /* === PHASE 4: PTO === */
+  .pto-list { display:flex; flex-wrap:wrap; gap:6px; margin-top:8px; }
+  .pto-chip { padding:4px 10px; font-size:0.78rem; background:var(--red-bg); border:1px solid rgba(239,83,80,0.25); border-radius:20px; color:var(--red); display:flex; align-items:center; gap:6px; }
+  .pto-chip button { background:none; border:none; color:var(--red); cursor:pointer; font-size:0.9rem; padding:0; line-height:1; }
+
+  /* === PHASE 4: Schedule Comparison === */
+  .diff-added { background:var(--green-bg); }
+  .diff-removed { background:var(--red-bg); }
+
+  /* === PHASE 4: Templates === */
+  .template-card { padding:12px; background:var(--bg-input); border:1px solid var(--border); border-radius:var(--radius-sm); display:flex; justify-content:space-between; align-items:center; margin-bottom:8px; }
+  .template-card:hover { border-color:var(--gold-dim); }
+</style>
+</head>
+<body>
+
+<!-- Toast Container -->
+<div class="toast-container" id="toast-container" aria-live="polite" aria-atomic="true"></div>
+
+<header>
+  <div class="logo">
+    <div class="logo-icon">V</div>
+    <div class="logo-text">
+      <h1>SHIFTFORGE</h1>
+      <div class="subtitle">Powered by Veritas Lab</div>
+    </div>
+  </div>
+  <div style="text-align:right;">
+    <div class="header-badge">v2.0 &bull; All data stored locally</div>
+    <div class="last-saved" id="last-saved"></div>
+  </div>
+</header>
+
+<nav id="main-nav">
+  <button class="active" data-page="dashboard">Dashboard</button>
+  <button data-page="employees">Employees</button>
+  <button data-page="availability">Availability</button>
+  <button data-page="compatibility">Compatibility</button>
+  <button data-page="generate">Generate Schedule</button>
+  <button data-page="settings">Settings</button>
+</nav>
+
+<main>
+  <!-- DASHBOARD -->
+  <div id="page-dashboard" class="page active">
+    <div class="stats-row" id="stats-row"></div>
+    <div class="card card-gold">
+      <h2><span class="icon">&#9889;</span> Quick Actions</h2>
+      <div style="display:flex;gap:12px;flex-wrap:wrap;">
+        <button class="btn btn-gold" onclick="showPage('employees');showAddEmployee();">+ Add Employee</button>
+        <button class="btn btn-outline" onclick="showPage('generate')">Generate Schedule</button>
+        <button class="btn btn-outline" onclick="showPage('availability')">Edit Availability</button>
+        <button class="btn btn-outline" onclick="showPage('compatibility')">Set Compatibility</button>
+      </div>
+    </div>
+    <div class="card" id="recent-schedule-card" style="display:none;">
+      <h2><span class="icon">&#128197;</span> Current Schedule</h2>
+      <div id="dashboard-schedule"></div>
+    </div>
+    <div class="card" id="schedule-history-card" style="display:none;">
+      <h2><span class="icon">&#128218;</span> Schedule History</h2>
+      <p style="color:var(--text-dim);font-size:0.82rem;margin-bottom:12px;">Past accepted schedules (up to 12 weeks)</p>
+      <div id="schedule-history-list"></div>
+    </div>
+    <div class="card" id="team-overview-card" style="display:none;">
+      <h2><span class="icon">&#128101;</span> Team Overview</h2>
+      <div id="team-overview"></div>
+    </div>
+  </div>
+
+  <!-- EMPLOYEES -->
+  <div id="page-employees" class="page">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px;flex-wrap:wrap;gap:12px;">
+      <div>
+        <h2 style="font-size:1.3rem;color:var(--gold);margin-bottom:4px;">Team Roster</h2>
+        <p style="color:var(--text-dim);font-size:0.85rem;">Manage employees, roles, and traits</p>
+      </div>
+      <div style="display:flex;gap:10px;">
+        <input type="text" id="emp-search" placeholder="Search employees..." style="padding:8px 14px;border:1px solid var(--border);border-radius:var(--radius-sm);background:var(--bg-input);color:var(--text);font-family:inherit;font-size:0.85rem;" oninput="renderEmployees()">
+        <button class="btn btn-gold" onclick="showAddEmployee()">+ Add Employee</button>
+      </div>
+    </div>
+    <div class="employee-grid" id="employee-grid"></div>
+    <div class="empty-state" id="no-employees" style="display:none;">
+      <div class="empty-icon">&#128100;</div>
+      <p>No employees added yet</p>
+      <button class="btn btn-gold" onclick="showAddEmployee()">Add Your First Employee</button>
+    </div>
+  </div>
+
+  <!-- AVAILABILITY -->
+  <div id="page-availability" class="page">
+    <div class="card">
+      <h2><span class="icon">&#128197;</span> Employee Availability</h2>
+      <p style="color:var(--text-dim);margin-bottom:4px;font-size:0.85rem;">Click cells to cycle: <span style="color:var(--green);font-weight:600;">Available (Y)</span> &rarr; <span style="color:var(--gold);font-weight:600;">Preferred (P)</span> &rarr; <span style="color:#666;font-weight:600;">Unavailable (N)</span></p>
+      <p style="color:var(--text-dim);margin-bottom:16px;font-size:0.78rem;">Preferred shifts get priority in auto-scheduling.</p>
+      <div class="avail-wrap">
+        <table class="avail-table" id="avail-table"></table>
+      </div>
+    </div>
+  </div>
+
+  <!-- COMPATIBILITY -->
+  <div id="page-compatibility" class="page">
+    <div class="card">
+      <h2><span class="icon">&#129309;</span> Team Compatibility</h2>
+      <p style="color:var(--text-dim);margin-bottom:16px;font-size:0.85rem;">Rate how well each pair works together. The scheduler avoids putting conflicting pairs on the same shift.</p>
+      <div style="display:flex;gap:8px;margin-bottom:16px;flex-wrap:wrap;">
+        <span class="tag" style="background:rgba(239,83,80,0.15);color:var(--red);border:1px solid rgba(239,83,80,0.2);">Conflict = avoid together</span>
+        <span class="tag" style="background:rgba(255,167,38,0.15);color:var(--orange);border:1px solid rgba(255,167,38,0.2);">Friction = try to avoid</span>
+        <span class="tag" style="background:rgba(76,175,80,0.15);color:var(--green);border:1px solid rgba(76,175,80,0.2);">Good = works well</span>
+        <span class="tag" style="background:rgba(66,165,245,0.15);color:var(--blue);border:1px solid rgba(66,165,245,0.2);">Great = best pairing</span>
+      </div>
+      <div class="compat-grid" id="compat-grid"></div>
+      <div class="empty-state" id="no-compat" style="display:none;">
+        <div class="empty-icon">&#129309;</div>
+        <p>Add at least 2 employees to set compatibility</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- GENERATE SCHEDULE -->
+  <div id="page-generate" class="page">
+    <div class="card card-gold">
+      <h2><span class="icon">&#9889;</span> Auto-Generate Schedule</h2>
+      <p style="color:var(--text-dim);margin-bottom:20px;font-size:0.85rem;">The algorithm optimizes for availability, compatibility, role coverage, fair distribution, and employee strengths.</p>
+      <div class="gen-options">
+        <div class="form-group">
+          <label>Week Starting (Monday)</label>
+          <input type="date" id="schedule-start-date">
+        </div>
+        <div class="form-group">
+          <label>Min Employees / Shift</label>
+          <input type="number" id="min-per-shift" value="2" min="1" max="20">
+        </div>
+        <div class="form-group">
+          <label>Max Employees / Shift</label>
+          <input type="number" id="max-per-shift" value="5" min="1" max="20">
+        </div>
+        <div class="form-group">
+          <label>Max Shifts / Week / Person</label>
+          <input type="number" id="max-shifts-per-person" value="5" min="1" max="7">
+        </div>
+        <div class="form-group">
+          <label>Prioritize</label>
+          <select id="schedule-priority">
+            <option value="balanced">Balanced</option>
+            <option value="compatibility">Compatibility First</option>
+            <option value="fairness">Fair Hours First</option>
+            <option value="strengths">Strengths Match First</option>
+          </select>
+        </div>
+      </div>
+      <div class="gen-progress" id="gen-progress">
+        <div class="progress-bar"><div class="progress-fill" id="progress-fill" style="width:0%;"></div></div>
+        <div class="progress-label" id="progress-label">Initializing...</div>
+      </div>
+      <button class="btn btn-gold" id="gen-btn" onclick="generateSchedule()" style="padding:12px 36px;font-size:0.95rem;">Generate Optimized Schedule <span class="kbd-hint">Ctrl+G</span></button>
+    </div>
+    <div class="card" id="schedule-output-card" style="display:none;">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px;flex-wrap:wrap;gap:12px;">
+        <h2 style="margin:0;"><span class="icon">&#128203;</span> Generated Schedule</h2>
+        <div style="display:flex;gap:8px;flex-wrap:wrap;">
+          <button class="btn btn-green btn-sm" onclick="acceptSchedule()">&#10003; Accept & Save</button>
+          <button class="btn btn-outline btn-sm" onclick="generateSchedule()">&#8635; Regenerate</button>
+          <button class="btn btn-outline btn-sm" onclick="printSchedule()">&#128424; Print</button>
+        </div>
+      </div>
+      <div id="schedule-score"></div>
+      <div id="schedule-cost" class="cost-summary" style="display:none;"></div>
+      <div style="margin-top:16px;">
+        <div id="schedule-output"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- SETTINGS -->
+  <div id="page-settings" class="page">
+    <div class="card">
+      <h2><span class="icon">&#9881;</span> Shift Configuration</h2>
+      <p style="color:var(--text-dim);margin-bottom:16px;font-size:0.85rem;">Define the daily shifts. These apply to every day of the week.</p>
+      <div id="shifts-config"></div>
+      <button class="btn btn-outline btn-sm" onclick="addShift()" style="margin-top:12px;">+ Add Shift</button>
+    </div>
+    <div class="card">
+      <h2><span class="icon">&#127991;</span> Roles / Positions</h2>
+      <p style="color:var(--text-dim);margin-bottom:16px;font-size:0.85rem;">Roles help the scheduler ensure proper coverage each shift.</p>
+      <div id="roles-config"></div>
+      <button class="btn btn-outline btn-sm" onclick="addRole()" style="margin-top:12px;">+ Add Role</button>
+    </div>
+    <div class="card">
+      <h2><span class="icon">&#127919;</span> Preset Traits</h2>
+      <p style="color:var(--text-dim);margin-bottom:16px;font-size:0.85rem;">Quick-assign buttons when adding employees. Comma-separated.</p>
+      <div class="form-grid" style="margin-bottom:16px;">
+        <div class="form-group">
+          <label>Personality Presets</label>
+          <textarea id="preset-personality" rows="3" style="font-size:0.82rem;background:var(--bg-input);color:var(--text);border:1px solid var(--border);border-radius:var(--radius-sm);padding:10px;font-family:inherit;"></textarea>
+        </div>
+        <div class="form-group">
+          <label>Strength Presets</label>
+          <textarea id="preset-strengths" rows="3" style="font-size:0.82rem;background:var(--bg-input);color:var(--text);border:1px solid var(--border);border-radius:var(--radius-sm);padding:10px;font-family:inherit;"></textarea>
+        </div>
+        <div class="form-group">
+          <label>Weakness Presets</label>
+          <textarea id="preset-weaknesses" rows="3" style="font-size:0.82rem;background:var(--bg-input);color:var(--text);border:1px solid var(--border);border-radius:var(--radius-sm);padding:10px;font-family:inherit;"></textarea>
+        </div>
+      </div>
+      <button class="btn btn-gold btn-sm" onclick="savePresets()">Save Presets</button>
+    </div>
+    <div class="card">
+      <h2><span class="icon">&#128190;</span> Data Management</h2>
+      <p style="color:var(--text-dim);margin-bottom:16px;font-size:0.85rem;">Export to share or back up. Import to restore. All data lives in your browser.</p>
+      <div style="display:flex;gap:12px;flex-wrap:wrap;">
+        <button class="btn btn-outline" onclick="exportData()">&#128229; Export JSON</button>
+        <button class="btn btn-outline" onclick="exportCSV()">&#128196; Export CSV</button>
+        <label class="btn btn-outline" style="cursor:pointer;">&#128228; Import JSON <input type="file" accept=".json" onchange="importData(event)" style="display:none;"></label>
+        <button class="btn btn-danger" id="clear-all-btn" onclick="confirmClearAll(this)">&#128465; Clear All Data</button>
+      </div>
+    </div>
+  </div>
+</main>
+
+<footer>
+  <strong style="color:var(--gold);font-family:'Orbitron',monospace;letter-spacing:1px;">SHIFTFORGE</strong> by Veritas Lab &bull; Data stored in your browser &bull; No server, no tracking
+</footer>
+
+<!-- MODAL -->
+<div class="modal-overlay" id="modal-overlay" style="display:none;" onclick="event.target===this&&closeModal()">
+  <div class="modal" id="modal-content"></div>
+</div>
+
+<script>
+// ===================== DATA STORE =====================
+const STORE_KEY = 'shiftforge_data';
+let data = loadData();
+let _pendingSchedule = null;
+
+function defaultData() {
+  return {
+    employees: [],
+    availability: {},
+    compatibility: {},
+    shifts: [
+      { id: 's1', name: 'Morning', start: '06:00', end: '11:00' },
+      { id: 's2', name: 'Lunch Rush', start: '11:00', end: '15:00' },
+      { id: 's3', name: 'Dinner', start: '15:00', end: '21:00' },
+      { id: 's4', name: 'Close', start: '21:00', end: '23:00' },
+    ],
+    roles: ['Line Cook', 'Prep Cook', 'Cashier', 'Shift Lead', 'Expeditor', 'Drive-Thru'],
+    presets: {
+      personality: ['Leader', 'Team Player', 'Independent', 'Energetic', 'Calm', 'Detail-Oriented', 'Fast Learner', 'Reliable', 'Flexible', 'Outgoing', 'Quiet', 'Motivator'],
+      strengths: ['Speed', 'Accuracy', 'Customer Service', 'Multitasking', 'Food Prep', 'Cash Handling', 'Cleanliness', 'Training Others', 'Opening Procedures', 'Closing Procedures', 'Drive-Thru', 'Line Assembly', 'Inventory', 'Problem Solving'],
+      weaknesses: ['Tardiness', 'Phone Usage', 'Slow Under Pressure', 'Attitude Issues', 'Call-Outs', 'Inconsistent Quality', 'Poor Time Mgmt', 'Needs Supervision', 'Conflict-Prone', 'Easily Distracted'],
+    },
+    currentSchedule: null,
+    scheduleHistory: [],
+    hourlyRates: {},
+    pendingSchedule: null,
+    nextId: 1,
+  };
+}
+
+function loadData() {
+  try {
+    const saved = localStorage.getItem(STORE_KEY);
+    if (saved) {
+      const d = JSON.parse(saved);
+      const def = defaultData();
+      for (const k of Object.keys(def)) { if (!(k in d)) d[k] = def[k]; }
+      return d;
+    }
+  } catch(e) {}
+  return defaultData();
+}
+
+function save() {
+  localStorage.setItem(STORE_KEY, JSON.stringify(data));
+  const el = document.getElementById('last-saved');
+  if (el) {
+    el.textContent = 'Saved ' + new Date().toLocaleTimeString();
+    el.classList.add('just-saved');
+    setTimeout(() => el.classList.remove('just-saved'), 2000);
+  }
+}
+
+// ===================== TOAST SYSTEM =====================
+function showToast(msg, type = 'success', duration = 3200) {
+  const c = document.getElementById('toast-container');
+  const t = document.createElement('div');
+  t.className = 'toast toast-' + type;
+  const icons = { success: '\u2714', error: '\u2718', warning: '\u26A0', info: '\u2139' };
+  t.innerHTML = '<span>' + (icons[type] || '') + '</span><span>' + msg + '</span>';
+  c.appendChild(t);
+  setTimeout(() => { if (t.parentNode) t.remove(); }, duration);
+}
+
+// ===================== NAVIGATION =====================
+const DAYS = ['Mon','Tue','Wed','Thu','Fri','Sat','Sun'];
+const DAYS_FULL = ['Monday','Tuesday','Wednesday','Thursday','Friday','Saturday','Sunday'];
+const COMPAT_LABELS = {'-2':'Conflict','-1':'Friction','0':'Neutral','1':'Good','2':'Great'};
+const COMPAT_COLORS = {'-2':'var(--red)','-1':'var(--orange)','0':'var(--text-dim)','1':'var(--green)','2':'var(--blue)'};
+const VALID_PAGES = ['dashboard','employees','availability','compatibility','generate','settings'];
+
+document.querySelectorAll('nav button').forEach(btn => {
+  btn.addEventListener('click', () => showPage(btn.dataset.page));
+});
+
+function showPage(page) {
+  if (!VALID_PAGES.includes(page)) page = 'dashboard';
+  document.querySelectorAll('nav button').forEach(b => b.classList.toggle('active', b.dataset.page === page));
+  document.querySelectorAll('.page').forEach(p => p.classList.toggle('active', p.id === 'page-' + page));
+  if (window.location.hash !== '#' + page) history.replaceState(null, '', '#' + page);
+  if (page === 'dashboard') renderDashboard();
+  if (page === 'employees') renderEmployees();
+  if (page === 'availability') renderAvailability();
+  if (page === 'compatibility') renderCompatibility();
+  if (page === 'generate') initGeneratePage();
+  if (page === 'settings') renderSettings();
+}
+
+// Hash routing
+window.addEventListener('hashchange', () => {
+  const page = window.location.hash.slice(1);
+  if (page) showPage(page);
+});
+
+// Keyboard shortcuts
+document.addEventListener('keydown', e => {
+  if (e.ctrlKey && e.key === 'g') { e.preventDefault(); showPage('generate'); generateSchedule(); }
+  if (e.ctrlKey && e.key === 's') { e.preventDefault(); save(); showToast('Data saved', 'success'); }
+  if (e.key === 'Escape') closeModal();
+});
+
+// Restore pending schedule
+if (data.pendingSchedule) {
+  _pendingSchedule = data.pendingSchedule;
+}
+
+// ===================== DASHBOARD =====================
+function renderDashboard() {
+  const emps = data.employees;
+  const totalCompat = Object.keys(data.compatibility).length;
+  const positiveCompat = Object.values(data.compatibility).filter(v => v > 0).length;
+  const conflictCompat = Object.values(data.compatibility).filter(v => v < 0).length;
+  const availSet = Object.keys(data.availability).filter(id => {
+    const emp = data.employees.find(e => e.id === id);
+    if (!emp) return false;
+    return Object.values(data.availability[id] || {}).some(day =>
+      Object.values(day).some(v => v === 'yes' || v === 'prefer')
+    );
+  }).length;
+
+  document.getElementById('stats-row').innerHTML = `
+    <div class="stat-card"><div class="num">${emps.length}</div><div class="label">Employees</div></div>
+    <div class="stat-card"><div class="num">${data.shifts.length}</div><div class="label">Shift Types</div></div>
+    <div class="stat-card"><div class="num">${positiveCompat}</div><div class="label">Good Pairings</div></div>
+    <div class="stat-card"><div class="num">${conflictCompat}</div><div class="label">Conflicts Flagged</div></div>
+    <div class="stat-card"><div class="num">${data.roles.length}</div><div class="label">Roles Defined</div></div>
+    <div class="stat-card"><div class="num">${availSet}</div><div class="label">Availability Set</div></div>
+  `;
+
+  // Current schedule
+  const schedCard = document.getElementById('recent-schedule-card');
+  if (data.currentSchedule) {
+    schedCard.style.display = 'block';
+    document.getElementById('dashboard-schedule').innerHTML = renderScheduleHTML(data.currentSchedule);
+  } else {
+    schedCard.style.display = 'none';
+  }
+
+  // Team overview
+  const overviewCard = document.getElementById('team-overview-card');
+  if (emps.length > 0) {
+    overviewCard.style.display = 'block';
+    const roleCount = {};
+    emps.forEach(e => { const r = e.role || 'Unassigned'; roleCount[r] = (roleCount[r]||0) + 1; });
+    let html = '<div style="display:flex;gap:8px;flex-wrap:wrap;">';
+    for (const [role, count] of Object.entries(roleCount)) {
+      html += `<span class="tag tag-role">${esc(role)}: ${count}</span>`;
+    }
+    const minors = emps.filter(e => e.isMinor).length;
+    if (minors) html += `<span class="tag tag-weakness">${minors} Minor(s)</span>`;
+    html += '</div>';
+    document.getElementById('team-overview').innerHTML = html;
+  } else {
+    overviewCard.style.display = 'none';
+  }
+
+  // Schedule History
+  renderScheduleHistory();
+}
+
+// ===================== EMPLOYEES =====================
+function renderEmployees() {
+  const grid = document.getElementById('employee-grid');
+  const empty = document.getElementById('no-employees');
+  const search = (document.getElementById('emp-search')?.value || '').toLowerCase();
+
+  let emps = data.employees;
+  if (search) {
+    emps = emps.filter(e =>
+      e.name.toLowerCase().includes(search) ||
+      (e.role||'').toLowerCase().includes(search) ||
+      (e.personality||[]).some(t => t.toLowerCase().includes(search)) ||
+      (e.strengths||[]).some(t => t.toLowerCase().includes(search))
+    );
+  }
+
+  if (data.employees.length === 0) {
+    grid.innerHTML = '';
+    empty.style.display = 'block';
+    return;
+  }
+  empty.style.display = 'none';
+
+  if (emps.length === 0) {
+    grid.innerHTML = '<div class="empty-state"><p>No matches found</p></div>';
+    return;
+  }
+
+  grid.innerHTML = emps.map(emp => {
+    const availDots = DAYS.map(d => {
+      const dayAvail = data.availability[emp.id]?.[d] || {};
+      const vals = Object.values(dayAvail);
+      const anyPrefer = vals.some(v => v === 'prefer');
+      const anyYes = vals.some(v => v === 'yes' || v === 'prefer');
+      const allNo = vals.length > 0 && vals.every(v => v === 'no');
+      const cls = allNo ? 'dot-unavailable' : anyPrefer ? 'dot-preferred' : anyYes ? 'dot-available' : 'dot-mixed';
+      return `<div class="dot ${cls}" title="${DAYS_FULL[DAYS.indexOf(d)]}">${d[0]}</div>`;
+    }).join('');
+
+    // Compat summary
+    let goodPairs = 0, badPairs = 0;
+    for (const [key, val] of Object.entries(data.compatibility)) {
+      if (key.includes(emp.id)) {
+        if (val > 0) goodPairs++;
+        if (val < 0) badPairs++;
+      }
+    }
+
+    return `
+      <div class="employee-card">
+        <div class="emp-header">
+          <div class="name">${esc(emp.name)}</div>
+          <span class="tag tag-role role-badge">${esc(emp.role || 'Unassigned')}</span>
+        </div>
+        <div class="emp-meta">
+          ${emp.isMinor ? '<span class="tag tag-weakness">Minor (Under 18)</span>' : ''}
+          ${emp.maxHours ? `<span class="tag tag-gold">Max ${emp.maxHours}h/wk</span>` : ''}
+          ${goodPairs ? `<span class="tag tag-strength">${goodPairs} good pair${goodPairs>1?'s':''}</span>` : ''}
+          ${badPairs ? `<span class="tag tag-weakness">${badPairs} conflict${badPairs>1?'s':''}</span>` : ''}
+        </div>
+        <div class="emp-tags">
+          ${(emp.personality||[]).map(t => `<span class="tag tag-personality">${esc(t)}</span>`).join('')}
+          ${(emp.strengths||[]).map(t => `<span class="tag tag-strength">${esc(t)}</span>`).join('')}
+          ${(emp.weaknesses||[]).map(t => `<span class="tag tag-weakness">${esc(t)}</span>`).join('')}
+        </div>
+        ${emp.notes ? `<div style="font-size:0.8rem;color:var(--text-dim);font-style:italic;margin-bottom:6px;">"${esc(emp.notes)}"</div>` : ''}
+        <div class="emp-avail">${availDots}</div>
+        <div class="emp-actions">
+          <button class="btn btn-outline btn-sm" onclick="showEditEmployee('${emp.id}')">Edit</button>
+          <button class="btn btn-outline btn-sm" onclick="showPage('availability')">Availability</button>
+          <button class="btn btn-danger btn-sm" onclick="deleteEmployee('${emp.id}')">Remove</button>
+        </div>
+      </div>
+    `;
+  }).join('');
+}
+
+function showAddEmployee() { showEmployeeModal(null); }
+function showEditEmployee(id) { showEmployeeModal(data.employees.find(e => e.id === id)); }
+
+function showEmployeeModal(emp) {
+  const isEdit = !!emp;
+  const e = emp || { name:'', role:'', phone:'', personality:[], strengths:[], weaknesses:[], isMinor:false, maxHours:'', notes:'' };
+  const roleOptions = data.roles.map(r => `<option value="${esc(r)}" ${e.role===r?'selected':''}>${esc(r)}</option>`).join('');
+
+  document.getElementById('modal-content').innerHTML = `
+    <h2>${isEdit ? 'Edit' : 'Add New'} Employee</h2>
+    <div class="form-grid">
+      <div class="form-group"><label>Full Name</label><input id="emp-name" value="${esc(e.name)}" placeholder="e.g. Maria Garcia"></div>
+      <div class="form-group"><label>Role / Position</label><select id="emp-role"><option value="">Select role...</option>${roleOptions}</select></div>
+      <div class="form-group"><label>Phone</label><input id="emp-phone" value="${esc(e.phone||'')}" placeholder="Optional"></div>
+      <div class="form-group"><label>Max Hours / Week</label><input id="emp-maxhours" type="number" value="${e.maxHours||''}" placeholder="e.g. 40"></div>
+    </div>
+    <div style="margin-top:16px;" class="form-group">
+      <label style="display:flex;align-items:center;gap:10px;cursor:pointer;text-transform:none;letter-spacing:0;font-size:0.88rem;font-weight:500;color:var(--text);">
+        <input type="checkbox" id="emp-minor" ${e.isMinor?'checked':''} style="width:18px;height:18px;accent-color:var(--gold);">
+        Minor (under 18) &mdash; restricts late/close shifts
+      </label>
+    </div>
+    <div style="margin-top:20px;">
+      <div class="form-group">
+        <label>Personality Traits</label>
+        <div class="chip-input chip-personality" id="chip-personality"></div>
+        <div class="preset-btns" id="preset-personality-btns"></div>
+      </div>
+    </div>
+    <div style="margin-top:14px;">
+      <div class="form-group">
+        <label>Strengths</label>
+        <div class="chip-input chip-strength" id="chip-strengths"></div>
+        <div class="preset-btns" id="preset-strength-btns"></div>
+      </div>
+    </div>
+    <div style="margin-top:14px;">
+      <div class="form-group">
+        <label>Weaknesses</label>
+        <div class="chip-input chip-weakness" id="chip-weaknesses"></div>
+        <div class="preset-btns" id="preset-weakness-btns"></div>
+      </div>
+    </div>
+    <div style="margin-top:14px;" class="form-group">
+      <label>Notes</label>
+      <textarea id="emp-notes" rows="2" placeholder="Anything else worth knowing..." style="background:var(--bg-input);color:var(--text);border:1px solid var(--border);border-radius:var(--radius-sm);padding:10px;font-family:inherit;font-size:0.88rem;">${esc(e.notes||'')}</textarea>
+    </div>
+    <div class="form-actions">
+      <button class="btn btn-outline" onclick="closeModal()">Cancel</button>
+      <button class="btn btn-gold" onclick="saveEmployee('${isEdit?emp.id:''}')">${isEdit?'Update':'Add'} Employee</button>
+    </div>
+  `;
+
+  initChipInput('chip-personality', e.personality||[], 'personality');
+  initChipInput('chip-strengths', e.strengths||[], 'strength');
+  initChipInput('chip-weaknesses', e.weaknesses||[], 'weakness');
+  renderPresetButtons('preset-personality-btns', data.presets.personality, 'chip-personality');
+  renderPresetButtons('preset-strength-btns', data.presets.strengths, 'chip-strengths');
+  renderPresetButtons('preset-weakness-btns', data.presets.weaknesses, 'chip-weaknesses');
+
+  document.getElementById('modal-overlay').style.display = 'flex';
+  setTimeout(() => document.getElementById('emp-name').focus(), 100);
+}
+
+function renderPresetButtons(containerId, presets, chipId) {
+  document.getElementById(containerId).innerHTML = presets.map(p =>
+    `<button class="preset-btn" onclick="addChipFromPreset('${chipId}','${esc(p)}')">${esc(p)}</button>`
+  ).join('');
+}
+
+// CHIP INPUT
+const chipData = {};
+function initChipInput(containerId, initial, type) {
+  chipData[containerId] = [...initial];
+  const container = document.getElementById(containerId);
+  renderChips(containerId);
+  const input = document.createElement('input');
+  input.placeholder = 'Type + Enter...';
+  input.addEventListener('keydown', e => {
+    if (e.key === 'Enter' && input.value.trim()) {
+      e.preventDefault();
+      const val = input.value.trim();
+      if (!chipData[containerId].includes(val)) {
+        chipData[containerId].push(val);
+        renderChips(containerId);
+      }
+      input.value = '';
+    }
+    if (e.key === 'Backspace' && !input.value && chipData[containerId].length) {
+      chipData[containerId].pop();
+      renderChips(containerId);
+    }
+  });
+  container.appendChild(input);
+  container.addEventListener('click', () => input.focus());
+}
+
+function renderChips(containerId) {
+  const container = document.getElementById(containerId);
+  const input = container.querySelector('input');
+  container.querySelectorAll('.chip').forEach(c => c.remove());
+  chipData[containerId].forEach((val, i) => {
+    const chip = document.createElement('span');
+    chip.className = 'chip';
+    chip.innerHTML = `${esc(val)} <button onclick="removeChip('${containerId}',${i})">&times;</button>`;
+    container.insertBefore(chip, input);
+  });
+}
+
+function removeChip(containerId, index) {
+  chipData[containerId].splice(index, 1);
+  renderChips(containerId);
+}
+
+function addChipFromPreset(containerId, val) {
+  if (!chipData[containerId].includes(val)) {
+    chipData[containerId].push(val);
+    renderChips(containerId);
+  }
+}
+
+function saveEmployee(editId) {
+  const name = document.getElementById('emp-name').value.trim();
+  if (!name) { showToast('Name is required', 'warning'); return; }
+
+  const empData = {
+    id: editId || 'emp_' + (data.nextId++),
+    name,
+    role: document.getElementById('emp-role').value,
+    phone: document.getElementById('emp-phone').value.trim(),
+    maxHours: parseInt(document.getElementById('emp-maxhours').value) || null,
+    isMinor: document.getElementById('emp-minor').checked,
+    personality: chipData['chip-personality'] || [],
+    strengths: chipData['chip-strengths'] || [],
+    weaknesses: chipData['chip-weaknesses'] || [],
+    notes: document.getElementById('emp-notes').value.trim(),
+  };
+
+  if (editId) {
+    const idx = data.employees.findIndex(e => e.id === editId);
+    if (idx >= 0) data.employees[idx] = empData;
+  } else {
+    data.employees.push(empData);
+    data.availability[empData.id] = {};
+    DAYS.forEach(d => {
+      data.availability[empData.id][d] = {};
+      data.shifts.forEach(s => { data.availability[empData.id][d][s.id] = 'yes'; });
+    });
+  }
+  save();
+  closeModal();
+  renderEmployees();
+}
+
+function deleteEmployee(id) {
+  const emp = data.employees.find(e => e.id === id);
+  if (!confirm(`Remove ${emp?.name || 'this employee'}? This cannot be undone.`)) return;
+  data.employees = data.employees.filter(e => e.id !== id);
+  delete data.availability[id];
+  for (const key of Object.keys(data.compatibility)) {
+    if (key.includes(id)) delete data.compatibility[key];
+  }
+  save();
+  renderEmployees();
+}
+
+// ===================== AVAILABILITY =====================
+function renderAvailability() {
+  const table = document.getElementById('avail-table');
+  if (data.employees.length === 0) {
+    table.innerHTML = '<tr><td colspan="8" style="padding:60px;text-align:center;color:var(--text-dim);font-size:0.95rem;">Add employees first to set availability</td></tr>';
+    return;
+  }
+
+  let html = '<thead><tr><th style="min-width:120px;">Employee</th>';
+  DAYS.forEach(d => html += `<th colspan="${data.shifts.length}">${d}</th>`);
+  html += '</tr><tr><th></th>';
+  DAYS.forEach(() => data.shifts.forEach(s => html += `<th style="font-size:0.65rem;font-weight:500;color:var(--text-dim);">${esc(s.name)}</th>`));
+  html += '</tr></thead><tbody>';
+
+  data.employees.forEach(emp => {
+    if (!data.availability[emp.id]) {
+      data.availability[emp.id] = {};
+      DAYS.forEach(d => {
+        data.availability[emp.id][d] = {};
+        data.shifts.forEach(s => { data.availability[emp.id][d][s.id] = 'yes'; });
+      });
+    }
+    html += `<tr><td class="emp-name-cell">${esc(emp.name)}</td>`;
+    DAYS.forEach(d => {
+      if (!data.availability[emp.id][d]) {
+        data.availability[emp.id][d] = {};
+        data.shifts.forEach(s => { data.availability[emp.id][d][s.id] = 'yes'; });
+      }
+      data.shifts.forEach(s => {
+        const val = data.availability[emp.id][d][s.id] || 'yes';
+        const cls = val === 'yes' ? 'avail-yes' : val === 'prefer' ? 'avail-prefer' : 'avail-no';
+        const label = val === 'yes' ? 'Y' : val === 'prefer' ? 'P' : 'N';
+        html += `<td class="${cls}" onclick="toggleAvail('${emp.id}','${d}','${s.id}')" title="${d} ${s.name}: ${val === 'yes' ? 'Available' : val === 'prefer' ? 'Preferred' : 'Unavailable'}">${label}</td>`;
+      });
+    });
+    html += '</tr>';
+  });
+  html += '</tbody>';
+  table.innerHTML = html;
+  save();
+}
+
+function toggleAvail(empId, day, shiftId) {
+  if (!data.availability[empId]) data.availability[empId] = {};
+  if (!data.availability[empId][day]) data.availability[empId][day] = {};
+  const cur = data.availability[empId][day][shiftId] || 'yes';
+  const next = cur === 'yes' ? 'prefer' : cur === 'prefer' ? 'no' : 'yes';
+  data.availability[empId][day][shiftId] = next;
+  save();
+  renderAvailability();
+}
+
+// ===================== COMPATIBILITY =====================
+function renderCompatibility() {
+  const grid = document.getElementById('compat-grid');
+  const empty = document.getElementById('no-compat');
+  const emps = data.employees;
+  if (emps.length < 2) { grid.innerHTML = ''; empty.style.display = 'block'; return; }
+  empty.style.display = 'none';
+
+  let html = '';
+  for (let i = 0; i < emps.length; i++) {
+    for (let j = i + 1; j < emps.length; j++) {
+      const key = compatKey(emps[i].id, emps[j].id);
+      const val = data.compatibility[key] || 0;
+      const options = [-2,-1,0,1,2].map(v =>
+        `<option value="${v}" ${val===v?'selected':''}>${COMPAT_LABELS[v]}</option>`
+      ).join('');
+      html += `
+        <div class="compat-pair">
+          <div class="names">${esc(emps[i].name)} <span class="arrow">&harr;</span> ${esc(emps[j].name)}</div>
+          <select onchange="setCompat('${key}',parseInt(this.value))" style="color:${COMPAT_COLORS[val]}">${options}</select>
+        </div>
+      `;
+    }
+  }
+  grid.innerHTML = html;
+}
+
+function compatKey(a, b) { return [a, b].sort().join('-'); }
+
+function setCompat(key, val) {
+  data.compatibility[key] = val;
+  save();
+  renderCompatibility();
+}
+
+// ===================== SCHEDULE GENERATION =====================
+function initGeneratePage() {
+  if (!document.getElementById('schedule-start-date').value) {
+    const today = new Date();
+    const day = today.getDay();
+    const diff = (day === 0 ? -6 : 1) - day;
+    const monday = new Date(today);
+    monday.setDate(today.getDate() + diff + 7);
+    document.getElementById('schedule-start-date').value = monday.toISOString().split('T')[0];
+  }
+}
+
+function generateSchedule() {
+  const emps = data.employees;
+  if (emps.length === 0) { showToast('Add employees first!', 'warning'); return; }
+
+  // Show progress bar
+  const prog = document.getElementById('gen-progress');
+  const fill = document.getElementById('progress-fill');
+  const label = document.getElementById('progress-label');
+  prog.classList.add('active');
+  fill.style.width = '10%';
+  label.textContent = 'Analyzing availability...';
+
+  const minPer = parseInt(document.getElementById('min-per-shift').value) || 2;
+  const maxPer = parseInt(document.getElementById('max-per-shift').value) || 5;
+  const maxShiftsPerPerson = parseInt(document.getElementById('max-shifts-per-person').value) || 5;
+  const startDate = document.getElementById('schedule-start-date').value;
+  const priority = document.getElementById('schedule-priority').value;
+
+  // Weight multipliers based on priority
+  const W = {
+    compat: priority === 'compatibility' ? 3 : 1,
+    fairness: priority === 'fairness' ? 3 : 1,
+    strengths: priority === 'strengths' ? 3 : 1,
+  };
+
+  const schedule = {};
+  const empShiftCount = {};
+  emps.forEach(e => empShiftCount[e.id] = 0);
+
+  let totalCompatScore = 0;
+  let conflicts = [];
+  let preferredAssignments = 0;
+  let totalAssignments = 0;
+
+  // Budget-aware scheduling
+  // Total person-slots available across the week
+  const totalBudget = emps.length * maxShiftsPerPerson;
+  const totalSlots = DAYS.length * data.shifts.length;
+  // Target crew per shift based on budget: distribute evenly, clamped to [minPer, maxPer]
+  const idealPerShift = Math.max(minPer, Math.min(maxPer, Math.floor(totalBudget / totalSlots)));
+
+  // Multiple passes for better optimization
+  const bestSchedule = { schedule: null, score: -Infinity };
+  const ITERATIONS = 25;
+
+  for (let iter = 0; iter < ITERATIONS; iter++) {
+    const iterSchedule = {};
+    const iterCount = {};
+    emps.forEach(e => iterCount[e.id] = 0);
+    let iterScore = 0;
+    let iterConflicts = [];
+    let iterBudgetUsed = 0;
+
+    // Shuffle day order for variety between iterations
+    const dayOrder = [...DAYS];
+    if (iter > 0) { for (let i = dayOrder.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [dayOrder[i], dayOrder[j]] = [dayOrder[j], dayOrder[i]]; } }
+
+    for (const day of dayOrder) {
+      iterSchedule[day] = {};
+      for (const shift of data.shifts) {
+        let available = emps.filter(e => {
+          const avail = data.availability[e.id]?.[day]?.[shift.id];
+          if (avail === 'no') return false;
+          if (iterCount[e.id] >= maxShiftsPerPerson) return false;
+          if (e.isMinor && (shift.name.toLowerCase().includes('close') || shift.name.toLowerCase().includes('night'))) return false;
+          return true;
+        });
+
+        const scored = available.map(e => {
+          let score = 0;
+          const avail = data.availability[e.id]?.[day]?.[shift.id];
+
+          // Availability preference
+          if (avail === 'prefer') score += 4;
+          else if (avail === 'yes') score += 1;
+
+          // Fairness: prefer those with fewer shifts — stronger weighting
+          const avgShifts = Object.values(iterCount).reduce((a,b)=>a+b,0) / emps.length;
+          const shiftDeficit = avgShifts - iterCount[e.id];
+          score += shiftDeficit * 2.5 * W.fairness;
+
+          // Extra penalty for over-scheduled employees
+          if (iterCount[e.id] > avgShifts + 1) score -= 3 * W.fairness;
+
+          // Strength matching
+          const sName = shift.name.toLowerCase();
+          if (sName.includes('morning') && e.strengths.includes('Opening Procedures')) score += 2.5 * W.strengths;
+          if (sName.includes('close') && e.strengths.includes('Closing Procedures')) score += 2.5 * W.strengths;
+          if ((sName.includes('lunch') || sName.includes('rush')) && e.strengths.includes('Speed')) score += 2 * W.strengths;
+          if ((sName.includes('lunch') || sName.includes('rush')) && e.strengths.includes('Multitasking')) score += 2 * W.strengths;
+          if (e.strengths.includes('Customer Service')) score += 0.5 * W.strengths;
+          if (e.personality.includes('Leader') || e.personality.includes('Motivator')) score += 0.5;
+          if (sName.includes('drive') && e.strengths.includes('Drive-Thru')) score += 2 * W.strengths;
+          if (e.role === 'Shift Lead') score += 0.8;
+
+          // Weakness penalties
+          if (e.weaknesses.includes('Slow Under Pressure') && (sName.includes('lunch') || sName.includes('rush'))) score -= 2.5 * W.strengths;
+          if (e.weaknesses.includes('Tardiness') && sName.includes('morning')) score -= 2 * W.strengths;
+          if (e.weaknesses.includes('Call-Outs')) score -= 0.5;
+
+          // Randomness for variety
+          score += Math.random() * 1.2;
+
+          return { emp: e, score };
+        });
+
+        scored.sort((a, b) => b.score - a.score);
+
+        // Dynamic target: budget remaining / unfilled shift-slots = target per slot
+        const filledCount = Object.values(iterSchedule).reduce((sum, dayObj) =>
+          sum + Object.keys(dayObj).length, 0);
+        const unfilledSlots = Math.max(1, totalSlots - filledCount);
+        const budgetRemaining = totalBudget - iterBudgetUsed;
+        // Each remaining slot gets an equal share of remaining budget
+        const perSlotBudget = budgetRemaining / unfilledSlots;
+        const dynamicTarget = Math.max(minPer, Math.min(maxPer, Math.round(perSlotBudget)));
+        const target = Math.min(dynamicTarget, Math.max(minPer, scored.length));
+
+        // Greedy assignment with compatibility
+        const assigned = [];
+
+        for (const { emp, score: empScore } of scored) {
+          if (assigned.length >= target) break;
+
+          // Compatibility check — hard conflicts (-2) are ABSOLUTE exclusions
+          if (assigned.length > 0) {
+            let hasHardConflict = false;
+            let compatTotal = 0;
+            for (const aId of assigned) {
+              const key = compatKey(emp.id, aId);
+              const c = data.compatibility[key] || 0;
+              if (c <= -2) { hasHardConflict = true; break; }
+              compatTotal += c;
+            }
+            // Hard conflicts are never scheduled together, period
+            if (hasHardConflict) continue;
+            // Soft conflicts still use threshold scoring
+            const threshold = W.compat > 1 ? -1 : -2;
+            if (compatTotal < threshold && assigned.length >= minPer) continue;
+          }
+
+          assigned.push(emp.id);
+          iterCount[emp.id]++;
+          iterBudgetUsed++;
+        }
+
+        // Fill remaining if under minimum — still respects hard conflicts
+        if (assigned.length < minPer) {
+          for (const { emp } of scored) {
+            if (assigned.length >= minPer) break;
+            if (!assigned.includes(emp.id)) {
+              // Check for hard conflicts before force-filling
+              let hardBlock = false;
+              for (const aId of assigned) {
+                const key = compatKey(emp.id, aId);
+                if ((data.compatibility[key] || 0) <= -2) { hardBlock = true; break; }
+              }
+              if (hardBlock) continue;
+              assigned.push(emp.id);
+              iterCount[emp.id]++;
+              iterBudgetUsed++;
+            }
+          }
+        }
+
+        iterSchedule[day][shift.id] = assigned;
+
+        // Score this shift
+        for (let i = 0; i < assigned.length; i++) {
+          for (let j = i + 1; j < assigned.length; j++) {
+            const key = compatKey(assigned[i], assigned[j]);
+            const c = data.compatibility[key] || 0;
+            iterScore += c * W.compat;
+            if (c < 0) {
+              iterConflicts.push({
+                day, shift: shift.name,
+                names: [emps.find(e=>e.id===assigned[i])?.name, emps.find(e=>e.id===assigned[j])?.name],
+                severity: c
+              });
+            }
+          }
+          // Bonus for preferred
+          const avail = data.availability[assigned[i]]?.[day]?.[shift.id];
+          if (avail === 'prefer') iterScore += 1;
+        }
+
+        // Role diversity bonus
+        const roles = new Set(assigned.map(id => emps.find(e=>e.id===id)?.role).filter(Boolean));
+        iterScore += roles.size * 0.5;
+
+        // Has a lead bonus
+        if (assigned.some(id => emps.find(e=>e.id===id)?.role === 'Shift Lead')) iterScore += 1;
+
+        // Coverage bonus — reward filling all 7 days
+        iterScore += assigned.length >= minPer ? 2 : -5;
+      }
+    }
+
+    // Fairness penalty — heavily penalize uneven distribution
+    const counts = Object.values(iterCount).filter(c => c > 0);
+    if (counts.length > 1) {
+      const mean = counts.reduce((a,b)=>a+b,0) / counts.length;
+      const variance = counts.reduce((sum,c) => sum + (c-mean)**2, 0) / counts.length;
+      iterScore -= variance * 2 * W.fairness;
+    }
+
+    // Coverage penalty — penalize empty days
+    const emptySlots = DAYS.reduce((sum, d) => sum + data.shifts.reduce((s2, sh) =>
+      s2 + ((iterSchedule[d]?.[sh.id]?.length || 0) === 0 ? 1 : 0), 0), 0);
+    iterScore -= emptySlots * 5;
+
+    if (iterScore > bestSchedule.score) {
+      bestSchedule.schedule = iterSchedule;
+      bestSchedule.score = iterScore;
+      bestSchedule.conflicts = iterConflicts;
+      bestSchedule.empCount = { ...iterCount };
+    }
+  }
+
+  // Use best result
+  const finalSchedule = bestSchedule.schedule;
+  conflicts = bestSchedule.conflicts;
+
+  // Count stats
+  totalAssignments = 0;
+  preferredAssignments = 0;
+  totalCompatScore = 0;
+  DAYS.forEach(day => {
+    data.shifts.forEach(shift => {
+      const assigned = finalSchedule[day]?.[shift.id] || [];
+      assigned.forEach(id => {
+        totalAssignments++;
+        if (data.availability[id]?.[day]?.[shift.id] === 'prefer') preferredAssignments++;
+      });
+      for (let i = 0; i < assigned.length; i++) {
+        for (let j = i + 1; j < assigned.length; j++) {
+          totalCompatScore += data.compatibility[compatKey(assigned[i], assigned[j])] || 0;
+        }
+      }
+    });
+  });
+
+  // Quality score
+  const maxPossibleCompat = totalAssignments * 2;
+  const compatPct = maxPossibleCompat > 0 ? Math.max(0, (totalCompatScore + maxPossibleCompat) / (maxPossibleCompat * 2) * 100) : 50;
+  const prefPct = totalAssignments > 0 ? (preferredAssignments / totalAssignments * 100) : 0;
+  const counts = Object.values(bestSchedule.empCount).filter(c => c > 0);
+  const fairPct = counts.length > 1 ? Math.max(0, 100 - (Math.max(...counts) - Math.min(...counts)) * 15) : 100;
+  const qualityPct = Math.round(Math.min(100, (compatPct * 0.4 + fairPct * 0.35 + prefPct * 0.25)));
+
+  const qualityColor = qualityPct >= 75 ? 'var(--green)' : qualityPct >= 50 ? 'var(--gold)' : 'var(--red)';
+
+  document.getElementById('schedule-output-card').style.display = 'block';
+
+  document.getElementById('schedule-score').innerHTML = `
+    <div class="score-section">
+      <div class="score-ring" style="border-color:${qualityColor};color:${qualityColor};">${qualityPct}%</div>
+      <div class="score-details">
+        <div class="score-label" style="color:${qualityColor};">Schedule Quality: ${qualityPct >= 75 ? 'Excellent' : qualityPct >= 50 ? 'Good' : 'Needs Review'}</div>
+        <div class="score-sub">
+          ${conflicts.length === 0 ? '<span style="color:var(--green);">No compatibility conflicts</span>' : `<span style="color:var(--red);">${conflicts.length} conflict warning${conflicts.length>1?'s':''}</span>`}
+          &bull; ${preferredAssignments} preferred shift${preferredAssignments!==1?'s':''} honored
+          &bull; Fairness: ${Math.round(fairPct)}%
+        </div>
+      </div>
+    </div>
+    ${conflicts.length > 0 ? `<div style="margin-top:12px;padding:12px;background:var(--red-bg);border:1px solid rgba(239,83,80,0.2);border-radius:var(--radius-sm);">
+      <div style="font-size:0.82rem;font-weight:600;color:var(--red);margin-bottom:6px;">Conflict Details:</div>
+      ${conflicts.map(c => `<div style="font-size:0.8rem;color:var(--text-dim);">${c.day} ${c.shift}: ${c.names.join(' & ')} ${c.severity<=-2?'(CONFLICT)':'(friction)'}</div>`).join('')}
+    </div>` : ''}
+  `;
+
+  const scheduleObj = {
+    schedule: finalSchedule,
+    startDate,
+    generatedAt: new Date().toISOString(),
+    conflicts,
+    quality: qualityPct,
+    empShiftCount: bestSchedule.empCount
+  };
+
+  document.getElementById('schedule-output').innerHTML = renderScheduleHTML(scheduleObj);
+  _pendingSchedule = scheduleObj;
+  data.pendingSchedule = scheduleObj;
+  save();
+  renderLaborCost(scheduleObj);
+  showToast('Schedule generated — ' + qualityPct + '% quality', 'success');
+
+  // Hide progress bar
+  prog.classList.remove('active');
+  fill.style.width = '100%';
+  label.textContent = 'Complete!';
+
+  // Scroll to output
+  document.getElementById('schedule-output-card').scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
+
+function renderScheduleHTML(schedObj) {
+  const { schedule, empShiftCount } = schedObj;
+  let html = '<div class="schedule-wrap"><table class="schedule-table"><thead><tr><th>Shift</th>';
+  DAYS.forEach(d => html += `<th>${d}</th>`);
+  html += '</tr></thead><tbody>';
+
+  data.shifts.forEach(shift => {
+    html += `<tr><td class="shift-label">${esc(shift.name)}<br><span style="font-size:0.68rem;font-weight:400;color:var(--text-dim);">${shift.start} - ${shift.end}</span></td>`;
+    DAYS.forEach(day => {
+      const assigned = schedule[day]?.[shift.id] || [];
+      const empHtml = assigned.map(id => {
+        const emp = data.employees.find(e => e.id === id);
+        if (!emp) return '';
+        let hasConflict = false, hasFriction = false;
+        for (const otherId of assigned) {
+          if (otherId === id) continue;
+          const c = data.compatibility[compatKey(id, otherId)] || 0;
+          if (c <= -2) hasConflict = true;
+          if (c === -1) hasFriction = true;
+        }
+        const avail = data.availability[id]?.[day]?.[shift.id];
+        const isPreferred = avail === 'prefer';
+        const cls = hasConflict ? 'conflict' : hasFriction ? 'warn' : isPreferred ? 'preferred' : '';
+        const title = `${emp.role||''}${hasConflict?' — CONFLICT':hasFriction?' — friction':''}${isPreferred?' — preferred':''}`;
+        return `<span class="schedule-emp ${cls}" title="${esc(title)}">${esc(emp.name)}${isPreferred?' ★':''}</span>`;
+      }).join('');
+      const isUnderstaffed = schedObj === _pendingSchedule && assigned.length < (parseInt(document.getElementById('min-per-shift').value, 10) || 0);
+      const understaffWarning = isUnderstaffed ? `<div style="margin-top:6px;"><button onclick="openConflictResolver('${day}', '${shift.id}')" class="btn btn-outline" style="background:#4a0000;color:#ff8a80;border-color:#ff8a80;padding:2px 8px;font-size:0.65rem;font-weight:700;">⚠️ RESOLVE CONFLICT</button></div>` : '';
+      html += `<td>${empHtml || '<span style="color:#444;font-size:0.78rem;">—</span>'}${understaffWarning}</td>`;
+    });
+    html += '</tr>';
+  });
+
+  html += '</tbody></table></div>';
+
+  // Hours summary
+  html += '<div class="hours-grid"><strong style="font-size:0.85rem;color:var(--gold);width:100%;">Shift Distribution:</strong>';
+  const maxCount = Math.max(...Object.values(empShiftCount || {}), 1);
+  data.employees.forEach(emp => {
+    const count = empShiftCount?.[emp.id] || 0;
+    if (count === 0) return;
+    const pct = (count / maxCount) * 100;
+    const barColor = count >= 6 ? 'var(--red)' : count >= 4 ? 'var(--gold)' : 'var(--green)';
+    html += `<div class="hours-chip">
+      <span>${esc(emp.name)}</span>
+      <div class="bar-mini"><div class="bar-mini-fill" style="width:${pct}%;background:${barColor};"></div></div>
+      <span style="color:${barColor};font-weight:700;">${count}</span>
+    </div>`;
+  });
+  html += '</div>';
+
+  return html;
+}
+
+function acceptSchedule() {
+  if (_pendingSchedule) {
+    // Save to history (keep last 20)
+    _pendingSchedule.savedAt = new Date().toISOString();
+    _pendingSchedule.weekStart = document.getElementById('schedule-start-date').value || 'N/A';
+    data.scheduleHistory = data.scheduleHistory || [];
+    data.scheduleHistory.unshift(JSON.parse(JSON.stringify(_pendingSchedule)));
+    if (data.scheduleHistory.length > 20) data.scheduleHistory = data.scheduleHistory.slice(0, 20);
+    data.currentSchedule = _pendingSchedule;
+    data.pendingSchedule = null;
+    _pendingSchedule = null;
+    save();
+    showToast('Schedule accepted & saved!', 'success');
+  }
+}
+
+function renderScheduleOutput(schedObj) {
+  document.getElementById('schedule-output-card').style.display = 'block';
+  document.getElementById('schedule-output').innerHTML = renderScheduleHTML(schedObj);
+  renderLaborCost(schedObj);
+}
+
+function openConflictResolver(day, shiftId) {
+  if (!_pendingSchedule) return;
+  const assigned = _pendingSchedule[day]?.[shiftId] || [];
+  
+  const available = data.employees.filter(e => {
+    if (assigned.includes(e.id)) return false;
+    const avail = data.availability[e.id]?.[day]?.[shiftId];
+    return avail === 'available' || avail === 'prefer';
+  });
+
+  let html = `<h2 style="margin-bottom:16px;">Resolve Scheduling Conflict</h2>
+    <p style="color:var(--text-dim);margin-bottom:16px;font-size:0.85rem;">The shift <strong>${esc(day)} - ${esc(data.shifts.find(s=>s.id===shiftId)?.name || shiftId)}</strong> is under-staffed because the remaining available employees have hard conflicts (-2) with already assigned staff.</p>
+    <div style="margin-bottom:16px;">
+      <strong>Assigned:</strong> ${assigned.map(id => esc(data.employees.find(e=>e.id===id)?.name)).join(', ') || 'None'}
+    </div>
+    <div class="table-wrap">
+      <table style="width:100%;text-align:left;border-collapse:collapse;">
+        <thead>
+          <tr style="border-bottom:1px solid #333;">
+            <th style="padding:8px;">Blocked Employee</th>
+            <th style="padding:8px;">Conflicting With</th>
+            <th style="padding:8px;text-align:right;">Action</th>
+          </tr>
+        </thead>
+        <tbody>
+  `;
+
+  let hasBlocked = false;
+  available.forEach(emp => {
+    let conflictsWith = [];
+    for (const aId of assigned) {
+      const key = compatKey(emp.id, aId);
+      if ((data.compatibility[key] || 0) <= -2) {
+        conflictsWith.push(data.employees.find(e=>e.id===aId)?.name || 'Unknown');
+      }
+    }
+    
+    if (conflictsWith.length > 0) {
+      hasBlocked = true;
+      html += `<tr style="border-bottom:1px solid #222;">
+        <td style="padding:8px;">${esc(emp.name)}</td>
+        <td style="padding:8px;color:var(--red);">${esc(conflictsWith.join(', '))}</td>
+        <td style="padding:8px;text-align:right;">
+          <button class="btn btn-outline" style="border-color:var(--red);color:var(--red);padding:4px 8px;font-size:0.75rem;" onclick="forceAssignConflict('${day}', '${shiftId}', '${emp.id}')">Force Override</button>
+        </td>
+      </tr>`;
+    }
+  });
+
+  if (!hasBlocked) {
+    html += `<tr><td colspan="3" style="padding:16px;text-align:center;color:var(--text-dim);">No available blocked employees. Ensure employees have marked themselves as available.</td></tr>`;
+  }
+
+  html += `</tbody></table></div>
+  <div class="form-actions" style="margin-top:24px;">
+    <button class="btn" onclick="closeModal()">Close</button>
+  </div>`;
+
+  document.getElementById('modal-content').innerHTML = html;
+  document.getElementById('modal-overlay').style.display = 'flex';
+}
+
+function forceAssignConflict(day, shiftId, empId) {
+  if (!_pendingSchedule) return;
+  if (!_pendingSchedule[day]) _pendingSchedule[day] = {};
+  if (!_pendingSchedule[day][shiftId]) _pendingSchedule[day][shiftId] = [];
+  
+  _pendingSchedule[day][shiftId].push(empId);
+  closeModal();
+  renderScheduleOutput(_pendingSchedule);
+  showToast('Employee force-assigned to shift.', 'success');
+}
+
+function printSchedule() {
+  const content = document.getElementById('schedule-output').innerHTML;
+  const date = document.getElementById('schedule-start-date').value;
+  const win = window.open('', '_blank');
+  win.document.write(`<!DOCTYPE html><html><head><title>ShiftForge Schedule — Week of ${date}</title>
+    <style>
+      body { font-family: 'Segoe UI', sans-serif; padding: 24px; color: #111; }
+      h1 { font-size: 1.3rem; margin-bottom: 4px; }
+      .sub { color: #666; font-size: 0.85rem; margin-bottom: 16px; }
+      table { width: 100%; border-collapse: collapse; }
+      th, td { padding: 8px 6px; border: 1px solid #ccc; font-size: 0.82rem; }
+      th { background: #222; color: #d4a843; text-align: center; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+      .shift-label { font-weight: bold; background: #f5f5f5; text-align: right; padding-right: 12px; }
+      .schedule-emp { display: inline-block; padding: 2px 8px; margin: 2px; border-radius: 4px; font-size: 0.75rem; font-weight: 600; background: #e8f5e9; border: 1px solid #a5d6a7; }
+      .schedule-emp.warn { background: #fff3e0; border-color: #ffcc80; }
+      .schedule-emp.conflict { background: #ffebee; border-color: #ef9a9a; }
+      .schedule-emp.preferred { background: #fff8e1; border-color: #ffe082; }
+      .hours-grid { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 16px; }
+      .hours-chip { padding: 4px 10px; font-size: 0.78rem; border: 1px solid #ccc; border-radius: 6px; display: flex; gap: 6px; align-items: center; }
+      .bar-mini { width: 40px; height: 4px; background: #eee; border-radius: 2px; overflow: hidden; }
+      .bar-mini-fill { height: 100%; border-radius: 2px; }
+      .schedule-wrap { overflow: visible; }
+      @media print { body { padding: 0; } }
+    </style></head><body>
+    <h1>ShiftForge Schedule</h1>
+    <div class="sub">Week of ${date} &bull; Generated ${new Date().toLocaleDateString()}</div>
+    ${content}
+    <div style="margin-top:24px;font-size:0.7rem;color:#999;text-align:center;">Generated by ShiftForge — Powered by Veritas Lab</div>
+    </body></html>`);
+  win.document.close();
+  setTimeout(() => win.print(), 300);
+}
+
+// ===================== SETTINGS =====================
+function renderSettings() {
+  document.getElementById('shifts-config').innerHTML = data.shifts.map((s, i) => `
+    <div class="shift-config-row">
+      <input value="${esc(s.name)}" placeholder="Shift name" style="width:140px;" onchange="data.shifts[${i}].name=this.value;save();">
+      <input type="time" value="${s.start}" onchange="data.shifts[${i}].start=this.value;save();">
+      <span style="color:var(--text-dim);">to</span>
+      <input type="time" value="${s.end}" onchange="data.shifts[${i}].end=this.value;save();">
+      <button class="btn btn-danger btn-sm btn-icon" onclick="data.shifts.splice(${i},1);save();renderSettings();">&times;</button>
+    </div>
+  `).join('');
+
+  document.getElementById('roles-config').innerHTML = data.roles.map((r, i) => `
+    <div class="shift-config-row">
+      <input value="${esc(r)}" style="width:200px;" onchange="data.roles[${i}]=this.value;save();">
+      <button class="btn btn-danger btn-sm btn-icon" onclick="data.roles.splice(${i},1);save();renderSettings();">&times;</button>
+    </div>
+  `).join('');
+
+  document.getElementById('preset-personality').value = data.presets.personality.join(', ');
+  document.getElementById('preset-strengths').value = data.presets.strengths.join(', ');
+  document.getElementById('preset-weaknesses').value = data.presets.weaknesses.join(', ');
+}
+
+function addShift() {
+  const id = 's' + Date.now();
+  data.shifts.push({ id, name: 'New Shift', start: '09:00', end: '17:00' });
+  data.employees.forEach(e => {
+    DAYS.forEach(d => {
+      if (!data.availability[e.id]) data.availability[e.id] = {};
+      if (!data.availability[e.id][d]) data.availability[e.id][d] = {};
+      data.availability[e.id][d][id] = 'yes';
+    });
+  });
+  save();
+  renderSettings();
+}
+
+function addRole() {
+  data.roles.push('New Role');
+  save();
+  renderSettings();
+}
+
+function savePresets() {
+  data.presets.personality = document.getElementById('preset-personality').value.split(',').map(s => s.trim()).filter(Boolean);
+  data.presets.strengths = document.getElementById('preset-strengths').value.split(',').map(s => s.trim()).filter(Boolean);
+  data.presets.weaknesses = document.getElementById('preset-weaknesses').value.split(',').map(s => s.trim()).filter(Boolean);
+  save();
+  showToast('Presets saved!', 'success');
+}
+
+// ===================== DATA MANAGEMENT =====================
+function exportData() {
+  const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `shiftforge_backup_${new Date().toISOString().split('T')[0]}.json`;
+  a.click();
+  URL.revokeObjectURL(url);
+}
+
+function importData(event) {
+  const file = event.target.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = (e) => {
+    try {
+      const imported = JSON.parse(e.target.result);
+      if (imported.employees) {
+        data = { ...defaultData(), ...imported };
+        save();
+        showToast('Data imported successfully!', 'success');
+        showPage('dashboard');
+      } else { showToast('Invalid file — expected ShiftForge data', 'error'); }
+    } catch(err) { showToast('Import error: ' + err.message, 'error'); }
+  };
+  reader.readAsText(file);
+}
+
+function confirmClearAll(btn) {
+  const parent = btn.parentNode;
+  const existing = parent.querySelector('.inline-confirm');
+  if (existing) { existing.remove(); return; }
+  const div = document.createElement('div');
+  div.className = 'inline-confirm';
+  div.innerHTML = '<span class="confirm-msg">Delete everything?</span>' +
+    '<button class="confirm-yes" onclick="doClearAll()">Yes, Delete</button>' +
+    '<button class="confirm-no" onclick="this.closest(\'.inline-confirm\').remove()">Cancel</button>';
+  parent.appendChild(div);
+}
+
+function doClearAll() {
+  data = defaultData();
+  _pendingSchedule = null;
+  save();
+  showToast('All data cleared', 'warning');
+  showPage('dashboard');
+}
+
+function exportCSV() {
+  if (!data.currentSchedule) { showToast('No schedule to export', 'warning'); return; }
+  const s = data.currentSchedule;
+  let csv = 'Day,Shift,Employees\n';
+  DAYS.forEach(day => {
+    if (!s.schedule[day]) return;
+    data.shifts.forEach(shift => {
+      const emps = (s.schedule[day][shift.id] || []).map(id => {
+        const e = data.employees.find(x => x.id === id);
+        return e ? e.name : 'Unknown';
+      }).join('; ');
+      csv += '"' + day + '","' + shift.name + '","' + emps + '"\n';
+    });
+  });
+  const blob = new Blob([csv], { type: 'text/csv' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = 'shiftforge_schedule_' + new Date().toISOString().split('T')[0] + '.csv';
+  a.click();
+  URL.revokeObjectURL(url);
+  showToast('CSV exported', 'success');
+}
+
+// ===================== SCHEDULE HISTORY =====================
+function renderScheduleHistory() {
+  const card = document.getElementById('schedule-history-card');
+  const list = document.getElementById('schedule-history-list');
+  if (!data.scheduleHistory || data.scheduleHistory.length === 0) { card.style.display = 'none'; return; }
+  card.style.display = 'block';
+  list.innerHTML = data.scheduleHistory.slice(0, 12).map((h, i) => {
+    const d = new Date(h.savedAt);
+    const dateStr = d.toLocaleDateString() + ' ' + d.toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'});
+    const qColor = h.quality >= 80 ? 'var(--green)' : h.quality >= 60 ? 'var(--orange)' : 'var(--red)';
+    return '<div class="history-item" onclick="viewHistorySchedule(' + i + ')">' +
+      '<div><span class="hi-date">' + dateStr + '</span><br><span style="font-size:0.75rem;color:var(--text-dim);">Week of ' + (h.weekStart || 'N/A') + '</span></div>' +
+      '<div class="hi-actions"><span class="hi-quality" style="color:' + qColor + ';">' + (h.quality || 0).toFixed(0) + '%</span>' +
+      '<button class="btn btn-outline btn-sm" onclick="event.stopPropagation();restoreHistorySchedule(' + i + ')" style="font-size:0.7rem;padding:2px 8px;">Restore</button>' +
+      '</div></div>';
+  }).join('');
+}
+
+function viewHistorySchedule(idx) {
+  const h = data.scheduleHistory[idx];
+  if (!h) return;
+  _pendingSchedule = h;
+  showPage('generate');
+  renderScheduleOutput(h);
+  showToast('Viewing historical schedule', 'info');
+}
+
+function restoreHistorySchedule(idx) {
+  const h = data.scheduleHistory[idx];
+  if (!h) return;
+  data.currentSchedule = h;
+  save();
+  showToast('Schedule restored', 'success');
+  showPage('dashboard');
+}
+
+// ===================== LABOR COST =====================
+function renderLaborCost(schedule) {
+  const costDiv = document.getElementById('schedule-cost');
+  if (!costDiv) return;
+  let totalCost = 0;
+  let hasRates = false;
+  const breakdown = [];
+  data.employees.forEach(emp => {
+    const rate = parseFloat(data.hourlyRates[emp.id]) || 0;
+    if (rate <= 0) return;
+    hasRates = true;
+    let hours = 0;
+    DAYS.forEach(day => {
+      if (!schedule.schedule[day]) return;
+      data.shifts.forEach(shift => {
+        if ((schedule.schedule[day][shift.id] || []).includes(emp.id)) {
+          const [sh,sm] = shift.start.split(':').map(Number);
+          const [eh,em] = shift.end.split(':').map(Number);
+          hours += (eh + em/60) - (sh + sm/60);
+        }
+      });
+    });
+    const cost = hours * rate;
+    totalCost += cost;
+    breakdown.push({ name: emp.name, hours: hours.toFixed(1), rate: rate.toFixed(2), cost: cost.toFixed(2) });
+  });
+  if (!hasRates) { costDiv.style.display = 'none'; return; }
+  costDiv.style.display = 'block';
+  costDiv.innerHTML = '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;">' +
+    '<span style="font-weight:600;color:var(--text);">&#128176; Estimated Labor Cost</span>' +
+    '<span class="cost-total">$' + totalCost.toFixed(2) + '</span></div>' +
+    '<div style="font-size:0.78rem;color:var(--text-dim);">' +
+    breakdown.map(b => b.name + ': ' + b.hours + 'h × $' + b.rate + ' = $' + b.cost).join(' &bull; ') + '</div>';
+}
+
+// ===================== UTILS =====================
+function esc(s) { return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;'); }
+function closeModal() { document.getElementById('modal-overlay').style.display = 'none'; }
+
+// Init with hash routing
+(function init() {
+  const hash = window.location.hash.slice(1);
+  if (hash && VALID_PAGES.includes(hash)) {
+    showPage(hash);
+  } else {
+    renderDashboard();
+  }
+})();
+</script>
+</body>
+</html>
