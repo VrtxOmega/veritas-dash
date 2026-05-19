@@ -107,6 +107,37 @@
           <div class="next-move" id="nextMoveText">Log your first run to build a plan.</div>
         </section>
 
+        <!-- Baby Runway -->
+        <section class="baby-runway glass-panel">
+          <div class="section-header compact">
+            <h2>Baby Runway</h2>
+            <span class="section-kicker" id="babyRunwayStatus">Set Plan</span>
+          </div>
+          <div class="runway-grid">
+            <div class="runway-cell saved">
+              <span class="runway-label">Saved</span>
+              <span class="runway-value" id="babyRunwaySaved">$0.00</span>
+            </div>
+            <div class="runway-cell remaining">
+              <span class="runway-label">Remaining</span>
+              <span class="runway-value" id="babyRunwayRemaining">$0.00</span>
+            </div>
+            <div class="runway-cell">
+              <span class="runway-label">Weeks Left</span>
+              <span class="runway-value" id="babyRunwayWeeks">Set date</span>
+            </div>
+            <div class="runway-cell">
+              <span class="runway-label">Weekly Need</span>
+              <span class="runway-value" id="babyRunwayWeeklyNeed">$0.00</span>
+            </div>
+          </div>
+          <div class="runway-bar-container">
+            <div class="runway-bar-fill" id="babyRunwayBarFill"></div>
+          </div>
+          <div class="runway-note" id="babyRunwayNote">Go bag, diapers, car seat, first month buffer.</div>
+          <div class="next-move" id="babyRunwayText">Set a target and due date in Settings to build the runway.</div>
+        </section>
+
         <!-- Care Check -->
         <section class="care-section glass-panel">
           <div class="section-header compact">
@@ -631,6 +662,28 @@
             <div class="input-group">
               <label for="setHourlyTarget">Hourly Target ($)</label>
               <input type="number" id="setHourlyTarget" class="modern-input" step="0.50" min="0" inputmode="decimal" />
+            </div>
+          </div>
+
+          <div class="settings-divider">
+            <span>Baby Runway</span>
+          </div>
+          <div class="settings-grid">
+            <div class="input-group">
+              <label for="setBabyDueDate">Due Date</label>
+              <input type="date" id="setBabyDueDate" class="modern-input" />
+            </div>
+            <div class="input-group">
+              <label for="setBabyTarget">Baby Target ($)</label>
+              <input type="number" id="setBabyTarget" class="modern-input" step="0.01" min="0" inputmode="decimal" />
+            </div>
+            <div class="input-group">
+              <label for="setBabySavedStart">Already Saved ($)</label>
+              <input type="number" id="setBabySavedStart" class="modern-input" step="0.01" min="0" inputmode="decimal" />
+            </div>
+            <div class="input-group">
+              <label for="setBabyNote">Readiness Note</label>
+              <input type="text" id="setBabyNote" class="modern-input" maxlength="80" />
             </div>
           </div>
 

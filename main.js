@@ -45,6 +45,12 @@ class Dashboard {
         babyFundRate: 10.0,
         mileageRate: 0.67,
         hourlyTarget: 22.0,
+        babyPlan: {
+          dueDate: '',
+          target: 1500.0,
+          savedStart: 0.0,
+          note: 'Go bag, diapers, car seat, first month buffer.'
+        },
         monthlyBills: { rent: 0, car: 0, insurance: 0, utilities: 0 }
       }
     };
@@ -55,6 +61,10 @@ class Dashboard {
     const config = {
       ...defaults.config,
       ...(saved.config || {}),
+      babyPlan: {
+        ...defaults.config.babyPlan,
+        ...((saved.config && saved.config.babyPlan) || {})
+      },
       monthlyBills: {
         ...defaults.config.monthlyBills,
         ...((saved.config && saved.config.monthlyBills) || {})
@@ -333,6 +343,14 @@ class Dashboard {
     this.yearDeduction = document.getElementById('yearDeduction');
     this.yearBabyFund = document.getElementById('yearBabyFund');
     this.yearTakeHome = document.getElementById('yearTakeHome');
+    this.babyRunwayStatus = document.getElementById('babyRunwayStatus');
+    this.babyRunwaySaved = document.getElementById('babyRunwaySaved');
+    this.babyRunwayRemaining = document.getElementById('babyRunwayRemaining');
+    this.babyRunwayWeeks = document.getElementById('babyRunwayWeeks');
+    this.babyRunwayWeeklyNeed = document.getElementById('babyRunwayWeeklyNeed');
+    this.babyRunwayBarFill = document.getElementById('babyRunwayBarFill');
+    this.babyRunwayNote = document.getElementById('babyRunwayNote');
+    this.babyRunwayText = document.getElementById('babyRunwayText');
     this.greetingEmoji = document.getElementById('greetingEmoji');
     this.greetingHeadline = document.getElementById('greetingHeadline');
     this.greetingSub = document.getElementById('greetingSub');
@@ -356,6 +374,11 @@ class Dashboard {
     document.getElementById('setBabyFundRate').value = this.state.config.babyFundRate;
     document.getElementById('setMileageRate').value = this.state.config.mileageRate;
     document.getElementById('setHourlyTarget').value = this.state.config.hourlyTarget;
+    const babyPlan = this.state.config.babyPlan || {};
+    document.getElementById('setBabyDueDate').value = babyPlan.dueDate || '';
+    document.getElementById('setBabyTarget').value = babyPlan.target || '';
+    document.getElementById('setBabySavedStart').value = babyPlan.savedStart || '';
+    document.getElementById('setBabyNote').value = babyPlan.note || '';
     const mb = this.state.config.monthlyBills || { rent: 0, car: 0, insurance: 0, utilities: 0 };
     document.getElementById('setRent').value = mb.rent || '';
     document.getElementById('setCar').value = mb.car || '';
@@ -494,6 +517,78 @@ class Dashboard {
     }
 
     return summary;
+  }
+
+  getLifetimeSummary() {
+    const summary = this.createEmptySummary();
+
+    Object.values(this.state.weeklyLog || {}).forEach(day => {
+      this.addSummary(summary, {
+        gross: day.gross,
+        expenses: day.expenses,
+        bills: day.bills,
+        net: day.net,
+        taxReserve: day.taxReserve,
+        takeHome: day.takeHome ?? day.net,
+        babyFund: day.babyFund,
+        spendable: day.spendable,
+        miles: day.miles,
+        hours: day.hours,
+        mileageDeduction: day.mileageDeduction,
+        runCount: day.runCount,
+        days: 1
+      });
+    });
+
+    if (this.state.transactions.length > 0) {
+      this.addSummary(summary, { ...this.getTodayTotals(), days: 1 });
+    }
+
+    return summary;
+  }
+
+  parseLocalDate(dateString) {
+    if (!dateString) return null;
+    const [year, month, day] = dateString.split('-').map(Number);
+    if (!year || !month || !day) return null;
+    const parsed = new Date(year, month - 1, day);
+    parsed.setHours(0, 0, 0, 0);
+    return Number.isNaN(parsed.getTime()) ? null : parsed;
+  }
+
+  getBabyRunway() {
+    const plan = this.state.config.babyPlan || {};
+    const target = Math.max(0, Number(plan.target) || 0);
+    const savedStart = Math.max(0, Number(plan.savedStart) || 0);
+    const lifetime = this.getLifetimeSummary();
+    const saved = savedStart + lifetime.babyFund;
+    const remaining = Math.max(0, target - saved);
+    const dueDate = this.parseLocalDate(plan.dueDate);
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const daysLeft = dueDate ? Math.ceil((dueDate - today) / 86400000) : null;
+    const weeksLeft = daysLeft === null ? null : Math.max(0, daysLeft / 7);
+    const weeklyNeed = weeksLeft === null
+      ? 0
+      : weeksLeft > 0
+        ? remaining / weeksLeft
+        : remaining;
+    const progress = target > 0 ? Math.max(0, Math.min(100, (saved / target) * 100)) : 0;
+
+    return {
+      dueDate,
+      dueDateText: plan.dueDate || '',
+      target,
+      savedStart,
+      saved,
+      remaining,
+      daysLeft,
+      weeksLeft,
+      weeklyNeed,
+      progress,
+      weekBabyFund: this.getPeriodSummary('week').babyFund,
+      note: (plan.note || '').trim()
+    };
   }
 
   bindEvents() {
@@ -662,6 +757,12 @@ class Dashboard {
       this.state.config.babyFundRate = parseFloat(document.getElementById('setBabyFundRate').value) || 0;
       this.state.config.mileageRate = parseFloat(document.getElementById('setMileageRate').value) || 0;
       this.state.config.hourlyTarget = parseFloat(document.getElementById('setHourlyTarget').value) || 0;
+      this.state.config.babyPlan = {
+        dueDate: document.getElementById('setBabyDueDate').value || '',
+        target: parseFloat(document.getElementById('setBabyTarget').value) || 0,
+        savedStart: parseFloat(document.getElementById('setBabySavedStart').value) || 0,
+        note: document.getElementById('setBabyNote').value.trim() || 'Go bag, diapers, car seat, first month buffer.'
+      };
       const rent = parseFloat(document.getElementById('setRent').value) || 0;
       const car = parseFloat(document.getElementById('setCar').value) || 0;
       const insurance = parseFloat(document.getElementById('setInsurance').value) || 0;
@@ -908,6 +1009,7 @@ class Dashboard {
     const week = this.getPeriodSummary('week');
     const month = this.getPeriodSummary('month');
     const year = this.getPeriodSummary('year');
+    const runway = this.getBabyRunway();
     const summaryHeaders = ['Period', 'Gross', 'Expenses', 'Bills', 'Tax Reserve', 'Baby Fund', 'Take Home', 'Miles', 'Mileage Deduction', 'Hours', 'Runs'];
     const summaryRow = (label, data) => [
       label,
@@ -931,6 +1033,16 @@ class Dashboard {
     rows.push(summaryRow('This Week', week));
     rows.push(summaryRow('This Month', month));
     rows.push(summaryRow('Year To Date', year));
+    rows.push([]);
+    rows.push(['Baby Runway']);
+    rows.push(['Due Date', runway.dueDateText]);
+    rows.push(['Target', runway.target.toFixed(2)]);
+    rows.push(['Already Saved', runway.savedStart.toFixed(2)]);
+    rows.push(['Saved Total', runway.saved.toFixed(2)]);
+    rows.push(['Remaining', runway.remaining.toFixed(2)]);
+    rows.push(['Weeks Left', runway.weeksLeft === null ? '' : runway.weeksLeft.toFixed(1)]);
+    rows.push(['Weekly Need', runway.weeklyNeed.toFixed(2)]);
+    rows.push(['Readiness Note', runway.note]);
     rows.push([]);
     rows.push(['Archived Days']);
     rows.push(['Date', ...summaryHeaders.slice(1)]);
@@ -1110,6 +1222,7 @@ class Dashboard {
     this.updateWeeklyProgress();
     this.updateWeekCommand();
     this.updateTaxSnapshot();
+    this.updateBabyRunway();
     this.updateVaultStatus();
 
     // Hourly Rate
@@ -1223,6 +1336,69 @@ class Dashboard {
     this.yearDeduction.textContent = f.format(year.mileageDeduction);
     this.yearBabyFund.textContent = f.format(year.babyFund);
     this.yearTakeHome.textContent = f.format(year.takeHome);
+  }
+
+  updateBabyRunway() {
+    if (!this.babyRunwaySaved) return;
+
+    const runway = this.getBabyRunway();
+    const f = new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' });
+    const hasTarget = runway.target > 0;
+    const hasDueDate = !!runway.dueDate;
+
+    this.babyRunwaySaved.textContent = f.format(runway.saved);
+    this.babyRunwayRemaining.textContent = f.format(runway.remaining);
+    this.babyRunwayWeeklyNeed.textContent = hasDueDate ? f.format(runway.weeklyNeed) : 'Set date';
+    this.babyRunwayWeeks.textContent = hasDueDate
+      ? runway.weeksLeft > 0
+        ? runway.weeksLeft.toFixed(1)
+        : 'Now'
+      : 'Set date';
+    this.babyRunwayBarFill.style.width = `${runway.progress}%`;
+    this.babyRunwayBarFill.classList.toggle('complete', hasTarget && runway.remaining <= 0);
+    this.babyRunwayNote.textContent = runway.note || 'Go bag, diapers, car seat, first month buffer.';
+
+    if (!hasTarget && !hasDueDate) {
+      this.babyRunwayStatus.textContent = 'Set Plan';
+      this.babyRunwayText.textContent = 'Set a target and due date in Settings to build the runway.';
+      return;
+    }
+
+    if (!hasTarget) {
+      this.babyRunwayStatus.textContent = 'Set Target';
+      this.babyRunwayText.textContent = 'Add a baby target in Settings to calculate the remaining runway.';
+      return;
+    }
+
+    if (hasTarget && runway.remaining <= 0) {
+      this.babyRunwayStatus.textContent = 'Ready';
+      this.babyRunwayText.textContent = `Target covered. ${f.format(runway.saved)} is protected for the baby runway.`;
+      return;
+    }
+
+    if (!hasDueDate) {
+      this.babyRunwayStatus.textContent = 'Target';
+      this.babyRunwayText.textContent = `${f.format(runway.remaining)} left toward the baby target. Add a due date for weekly pace.`;
+      return;
+    }
+
+    if (runway.daysLeft < 0) {
+      this.babyRunwayStatus.textContent = 'Open';
+      this.babyRunwayText.textContent = `${f.format(runway.remaining)} still open against the baby target.`;
+      return;
+    }
+
+    if (runway.weekBabyFund >= runway.weeklyNeed && runway.weeklyNeed > 0) {
+      this.babyRunwayStatus.textContent = 'On Pace';
+      this.babyRunwayText.textContent = `${f.format(runway.weekBabyFund)} saved this week against a ${f.format(runway.weeklyNeed)} weekly pace.`;
+    } else if (runway.weekBabyFund > 0) {
+      const gap = Math.max(0, runway.weeklyNeed - runway.weekBabyFund);
+      this.babyRunwayStatus.textContent = 'Building';
+      this.babyRunwayText.textContent = `${f.format(gap)} more baby fund this week keeps the runway on pace.`;
+    } else {
+      this.babyRunwayStatus.textContent = 'Needs Pace';
+      this.babyRunwayText.textContent = `${f.format(runway.weeklyNeed)} per week needed for ${runway.weeksLeft.toFixed(1)} weeks.`;
+    }
   }
 
   renderCareChecklist() {

@@ -38,6 +38,7 @@ Veritas Dash is a static PWA that runs entirely in the browser and stores data i
 - First-run quick setup for daily target, weekly target, tax reserve, baby-fund rate, fixed bills, and mileage rate
 - Weekly command view for take-home pace, remaining goal, runs left, reserves, miles, and hours
 - Weekly coach prompts for pace, next run target, and reserve protection
+- Baby Runway for due-date countdown, saved-so-far, remaining target, and weekly savings pace
 - Month and year-to-date export snapshot for tax-prep visibility
 - Data Vault backup files for full local export/import, plus backup links for quick restore
 - A non-medical shift readiness checklist for water, snack, charger, fuel, and break plan
@@ -58,6 +59,7 @@ Veritas Dash is a static PWA that runs entirely in the browser and stores data i
 | First-Run Setup | Opens a quick local setup sheet for the numbers that drive the dashboard |
 | Week Command | Shows weekly take-home, remaining goal, estimated runs left, reserve total, miles, and hours |
 | Weekly Coach | Turns weekly pace into concrete daily and run-count guidance |
+| Baby Runway | Converts baby-fund savings into due-date countdown, remaining target, and weekly pace |
 | Export Snapshot | Surfaces month and year-to-date totals used in the CSV report |
 | Data Vault | Exports and imports full JSON backup files with visible backup/restore status |
 | Local Backup Link | Generates a private restore link for browser-to-browser migration |
@@ -114,7 +116,7 @@ npx serve .
 | Shift | localStorage | id, date, startTime, endTime, earnings, mileage, category |
 | Expense | localStorage | id, date, amount, category, note |
 | Goal | localStorage | dailyTarget, weeklyTarget, hourlyTarget, currency |
-| Settings | localStorage | taxRate, babyFundRate, mileageRate, fixedBills |
+| Settings | localStorage | taxRate, babyFundRate, mileageRate, fixedBills, babyPlan |
 | Care Check | localStorage | water, snack, charger, fuel, breakPlan |
 
 ---
@@ -141,6 +143,7 @@ npx serve .
 | First-run setup + weekly coach | Complete |
 | PWA install/offline shell | Complete |
 | Data Vault JSON export/import | Complete |
+| Baby Runway countdown + savings pace | Complete |
 | Multi-currency support | Planned |
 | Deeper tax export presets | Planned |
 | ShiftForge integration (scheduling + earnings) | Planned |
