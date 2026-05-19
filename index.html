@@ -635,12 +635,17 @@
           </div>
 
           <div class="settings-divider">
-            <span>Local Backup</span>
+            <span>Data Vault</span>
           </div>
           <div class="backup-panel glass-panel">
+            <div class="vault-status" id="vaultStatus">No file backup yet.</div>
+            <div class="vault-reminder" id="vaultReminder">Export a backup file before switching phones, clearing browser data, or relying on this daily.</div>
+            <button type="button" id="btnExportBackup" class="btn primary-btn">Export Backup File</button>
+            <button type="button" id="btnImportBackup" class="btn secondary-btn">Import Backup File</button>
+            <input type="file" id="backupFileInput" accept="application/json,.json" hidden />
             <button type="button" id="btnBackup" class="btn secondary-btn">Copy Backup Link</button>
             <textarea id="backupLinkOutput" class="backup-output" readonly placeholder="Backup link appears here after you tap the button."></textarea>
-            <small>Private data stays in this browser. A backup link can restore this device's current plan on another browser.</small>
+            <small>Private data stays in this browser. Backup files are user-created JSON exports; backup links remain a quick restore option.</small>
           </div>
           
           <div class="settings-divider">

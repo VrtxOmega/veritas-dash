@@ -518,6 +518,17 @@ select.modern-input { appearance: none; cursor: pointer; }
   border-radius: 14px;
 }
 .backup-panel small { color: var(--vrts-text-muted); font-size: 0.78rem; line-height: 1.4; }
+.vault-status {
+  padding: 0.8rem 0.9rem; border-radius: 12px;
+  background: rgba(255,255,255,0.045); border: 1px solid hsla(150, 70%, 45%, 0.22);
+  color: var(--vrts-text); font-size: 0.86rem; font-weight: 800;
+}
+.vault-status.needs-backup {
+  border-color: hsla(44, 70%, 56%, 0.45); color: var(--vrts-gold);
+}
+.vault-reminder {
+  color: var(--vrts-text-muted); font-size: 0.82rem; line-height: 1.4;
+}
 .backup-output {
   width: 100%; min-height: 86px; resize: vertical; border-radius: 12px;
   border: 1px solid var(--vrts-border); background: rgba(0,0,0,0.22);

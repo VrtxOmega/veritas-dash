@@ -32,7 +32,10 @@ class Dashboard {
       notes: '',
       care: { water: false, snack: false, charger: false, fuel: false, break: false },
       meta: {
-        onboardingComplete: false
+        onboardingComplete: false,
+        lastBackupAt: '',
+        lastBackupType: '',
+        lastRestoreAt: ''
       },
       config: {
         dailyGoal: 150.0,
@@ -103,6 +106,7 @@ class Dashboard {
             if (!parsedState.meta) {
               this.state.meta.onboardingComplete = true;
             }
+            this.state.meta.lastRestoreAt = new Date().toISOString();
             this.saveState();
             this.initDOM();
             this.bindCareState();
@@ -121,6 +125,7 @@ class Dashboard {
 
   generateBackupLink() {
     try {
+      this.markBackup('link');
       const stateStr = JSON.stringify(this.state);
       const encoded = window.btoa(unescape(encodeURIComponent(stateStr)));
       const url = new URL(window.location.origin + window.location.pathname);
@@ -141,6 +146,86 @@ class Dashboard {
     } catch (e) {
       this.showToast('Failed to create backup.', true);
     }
+  }
+
+  markBackup(type) {
+    this.state.meta.lastBackupAt = new Date().toISOString();
+    this.state.meta.lastBackupType = type;
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(this.state));
+    this.updateVaultStatus();
+  }
+
+  createBackupPayload() {
+    return {
+      app: 'sovereign-dash',
+      schemaVersion: 1,
+      createdAt: new Date().toISOString(),
+      state: this.state
+    };
+  }
+
+  exportBackupFile() {
+    try {
+      this.markBackup('file');
+      const payload = this.createBackupPayload();
+      const blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json;charset=utf-8;' });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = `sovereign_dash_backup_${this.getDateKey()}.json`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      URL.revokeObjectURL(url);
+      this.showToast('Backup file exported.');
+    } catch (e) {
+      this.showToast('Backup export failed.', true);
+    }
+  }
+
+  async importBackupFile(file) {
+    if (!file) return;
+
+    try {
+      const text = await file.text();
+      const parsed = JSON.parse(text);
+      const importedState = this.extractBackupState(parsed);
+      const count = this.countBackupEntries(importedState);
+      const ok = confirm(`Restore this backup with ${count} saved item${count === 1 ? '' : 's'}? This replaces current browser data.`);
+
+      if (!ok) return;
+
+      this.state = this.mergeState(importedState);
+      if (!importedState.meta) {
+        this.state.meta.onboardingComplete = true;
+      }
+      this.state.meta.lastRestoreAt = new Date().toISOString();
+      this.saveState();
+      this.initDOM();
+      this.bindCareState();
+      this.closeAllModals();
+      this.openModal(this.settingsModal);
+      this.showToast('Backup restored.');
+    } catch (e) {
+      this.showToast('Backup import failed. Choose a Sovereign Dash JSON backup.', true);
+    } finally {
+      if (this.backupFileInput) {
+        this.backupFileInput.value = '';
+      }
+    }
+  }
+
+  extractBackupState(parsed) {
+    const maybeState = parsed && parsed.state ? parsed.state : parsed;
+    if (!maybeState || typeof maybeState !== 'object' || !maybeState.config) {
+      throw new Error('Invalid Sovereign Dash backup.');
+    }
+    return maybeState;
+  }
+
+  countBackupEntries(state) {
+    return (Array.isArray(state.transactions) ? state.transactions.length : 0)
+      + Object.keys(state.weeklyLog || {}).length;
   }
 
   copyToClipboard(text) {
@@ -217,7 +302,12 @@ class Dashboard {
     this.closeSettingsBtn = document.getElementById('closeSettingsBtn');
     this.clearTodayBtn = document.getElementById('clearTodayBtn');
     this.btnBackup = document.getElementById('btnBackup');
+    this.btnExportBackup = document.getElementById('btnExportBackup');
+    this.btnImportBackup = document.getElementById('btnImportBackup');
+    this.backupFileInput = document.getElementById('backupFileInput');
     this.backupLinkOutput = document.getElementById('backupLinkOutput');
+    this.vaultStatus = document.getElementById('vaultStatus');
+    this.vaultReminder = document.getElementById('vaultReminder');
     this.earningsForm = document.getElementById('earningsForm');
     this.expensesForm = document.getElementById('expensesForm');
     this.settingsForm = document.getElementById('settingsForm');
@@ -256,6 +346,7 @@ class Dashboard {
 
     this.populateSettingsInputs();
     this.populateOnboardingInputs();
+    this.updateVaultStatus();
   }
 
   populateSettingsInputs() {
@@ -283,6 +374,35 @@ class Dashboard {
     document.getElementById('onboardBabyFundRate').value = this.state.config.babyFundRate;
     document.getElementById('onboardMonthlyBills').value = monthlyTotal || '';
     document.getElementById('onboardMileageRate').value = this.state.config.mileageRate;
+  }
+
+  updateVaultStatus() {
+    if (!this.vaultStatus) return;
+
+    const lastBackupAt = this.state.meta.lastBackupAt;
+    const lastRestoreAt = this.state.meta.lastRestoreAt;
+    const type = this.state.meta.lastBackupType === 'file' ? 'file' : this.state.meta.lastBackupType === 'link' ? 'link' : '';
+    const totalEntries = this.state.transactions.length + Object.keys(this.state.weeklyLog || {}).length;
+
+    if (lastBackupAt) {
+      const stamp = new Date(lastBackupAt).toLocaleString([], { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' });
+      this.vaultStatus.textContent = `Last backup: ${stamp}${type ? ` (${type})` : ''}.`;
+      this.vaultStatus.classList.remove('needs-backup');
+    } else {
+      this.vaultStatus.textContent = totalEntries > 0 ? 'Backup needed: earnings are saved only in this browser.' : 'No file backup yet.';
+      this.vaultStatus.classList.toggle('needs-backup', totalEntries > 0);
+    }
+
+    if (this.vaultReminder) {
+      if (lastRestoreAt) {
+        const restored = new Date(lastRestoreAt).toLocaleString([], { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' });
+        this.vaultReminder.textContent = `Last restore: ${restored}. Export a fresh file after important changes.`;
+      } else if (lastBackupAt) {
+        this.vaultReminder.textContent = 'Export another backup after a big week, phone change, or browser cleanup.';
+      } else {
+        this.vaultReminder.textContent = 'Export a backup file before switching phones, clearing browser data, or relying on this daily.';
+      }
+    }
   }
 
   updateComputedBillsDisplay() {
@@ -412,6 +532,13 @@ class Dashboard {
 
     if (this.btnBackup) {
       this.btnBackup.addEventListener('click', () => this.generateBackupLink());
+    }
+    if (this.btnExportBackup) {
+      this.btnExportBackup.addEventListener('click', () => this.exportBackupFile());
+    }
+    if (this.btnImportBackup && this.backupFileInput) {
+      this.btnImportBackup.addEventListener('click', () => this.backupFileInput.click());
+      this.backupFileInput.addEventListener('change', () => this.importBackupFile(this.backupFileInput.files[0]));
     }
 
     if (this.onboardingForm) {
@@ -983,6 +1110,7 @@ class Dashboard {
     this.updateWeeklyProgress();
     this.updateWeekCommand();
     this.updateTaxSnapshot();
+    this.updateVaultStatus();
 
     // Hourly Rate
     this.calculateHourlyRate(totals.gross, totals.hours);

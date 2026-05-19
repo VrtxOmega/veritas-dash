@@ -39,7 +39,7 @@ Veritas Dash is a static PWA that runs entirely in the browser and stores data i
 - Weekly command view for take-home pace, remaining goal, runs left, reserves, miles, and hours
 - Weekly coach prompts for pace, next run target, and reserve protection
 - Month and year-to-date export snapshot for tax-prep visibility
-- Local backup links for moving private data between browsers without a backend
+- Data Vault backup files for full local export/import, plus backup links for quick restore
 - A non-medical shift readiness checklist for water, snack, charger, fuel, and break plan
 - Weekly and monthly aggregated analytics
 - Confetti celebration on goal achievement
@@ -59,6 +59,7 @@ Veritas Dash is a static PWA that runs entirely in the browser and stores data i
 | Week Command | Shows weekly take-home, remaining goal, estimated runs left, reserve total, miles, and hours |
 | Weekly Coach | Turns weekly pace into concrete daily and run-count guidance |
 | Export Snapshot | Surfaces month and year-to-date totals used in the CSV report |
+| Data Vault | Exports and imports full JSON backup files with visible backup/restore status |
 | Local Backup Link | Generates a private restore link for browser-to-browser migration |
 | Smart Insights | Contextual analysis: "You're 73% to goal — $41.50 to go" |
 | PWA Installable | `manifest.json`, icons, install prompt, shortcut, and service worker shell cache |
@@ -121,9 +122,10 @@ npx serve .
 ## Security & Sovereignty
 
 - **No server-side processing**: All logic runs in the browser. No backend API processes your earnings data.
-- **Private by default**: Backup/share is link-based and user-triggered; there is no built-in cloud sync.
+- **Private by default**: Backup files and backup links are user-triggered; there is no built-in cloud sync.
 - **Zero telemetry**: No analytics, no tracking pixels, no crash reporting.
 - **Local storage warning**: Browser storage is private to the device/browser profile, but it is not a substitute for an encrypted vault.
+- **Backup warning**: Exported JSON backup files contain the dashboard data needed to restore the app. Store them somewhere you trust.
 
 ---
 
@@ -138,6 +140,7 @@ npx serve .
 | Weekly/monthly analytics | Complete |
 | First-run setup + weekly coach | Complete |
 | PWA install/offline shell | Complete |
+| Data Vault JSON export/import | Complete |
 | Multi-currency support | Planned |
 | Deeper tax export presets | Planned |
 | ShiftForge integration (scheduling + earnings) | Planned |
