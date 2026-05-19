@@ -48,6 +48,12 @@ class Dashboard {
         },
         paid: {}
       },
+      offerGuard: {
+        pay: 0,
+        miles: 0,
+        minutes: 0,
+        lastDecision: ''
+      },
       meta: {
         onboardingComplete: false,
         lastBackupAt: '',
@@ -101,6 +107,17 @@ class Dashboard {
       if (value === true) billShield.paid[key] = true;
     });
 
+    const offerGuard = {
+      ...defaults.offerGuard,
+      ...(saved.offerGuard || {})
+    };
+    offerGuard.pay = Math.max(0, Number(offerGuard.pay) || 0);
+    offerGuard.miles = Math.max(0, Number(offerGuard.miles) || 0);
+    offerGuard.minutes = Math.max(0, Number(offerGuard.minutes) || 0);
+    if (!['take', 'maybe', 'skip', ''].includes(offerGuard.lastDecision)) {
+      offerGuard.lastDecision = '';
+    }
+
     const config = {
       ...defaults.config,
       ...(saved.config || {}),
@@ -122,6 +139,7 @@ class Dashboard {
       care: { ...defaults.care, ...(saved.care || {}) },
       timer,
       billShield,
+      offerGuard,
       meta: { ...defaults.meta, ...(saved.meta || {}) },
       config
     };
@@ -330,6 +348,17 @@ class Dashboard {
     this.dailyProgressText = document.getElementById('dailyProgressText');
     this.remainingToGoal = document.getElementById('remainingToGoal');
     this.dailyGoalDisplay = document.getElementById('dailyGoalDisplay');
+    this.offerGuardSection = document.querySelector('.offer-guard');
+    this.offerPay = document.getElementById('offerPay');
+    this.offerMiles = document.getElementById('offerMiles');
+    this.offerMinutes = document.getElementById('offerMinutes');
+    this.offerGuardStatus = document.getElementById('offerGuardStatus');
+    this.offerHourly = document.getElementById('offerHourly');
+    this.offerPerMile = document.getElementById('offerPerMile');
+    this.offerNetEstimate = document.getElementById('offerNetEstimate');
+    this.offerGuardText = document.getElementById('offerGuardText');
+    this.btnUseOffer = document.getElementById('btnUseOffer');
+    this.btnClearOffer = document.getElementById('btnClearOffer');
     this.runTimerStatus = document.getElementById('runTimerStatus');
     this.runTimerElapsed = document.getElementById('runTimerElapsed');
     this.runTimerStarted = document.getElementById('runTimerStarted');
@@ -425,6 +454,7 @@ class Dashboard {
 
     this.populateSettingsInputs();
     this.populateOnboardingInputs();
+    this.populateOfferInputs();
     this.updateVaultStatus();
   }
 
@@ -463,6 +493,14 @@ class Dashboard {
     document.getElementById('onboardBabyFundRate').value = this.state.config.babyFundRate;
     document.getElementById('onboardMonthlyBills').value = monthlyTotal || '';
     document.getElementById('onboardMileageRate').value = this.state.config.mileageRate;
+  }
+
+  populateOfferInputs() {
+    if (!this.offerPay) return;
+    const offer = this.state.offerGuard || this.createDefaultState().offerGuard;
+    this.offerPay.value = offer.pay > 0 ? offer.pay : '';
+    this.offerMiles.value = offer.miles > 0 ? offer.miles : '';
+    this.offerMinutes.value = offer.minutes > 0 ? offer.minutes : '';
   }
 
   updateVaultStatus() {
@@ -655,6 +693,117 @@ class Dashboard {
       weekBabyFund: this.getPeriodSummary('week').babyFund,
       note: (plan.note || '').trim()
     };
+  }
+
+  getOfferGuardMetrics() {
+    const offer = this.state.offerGuard || this.createDefaultState().offerGuard;
+    const pay = Math.max(0, Number(offer.pay) || 0);
+    const miles = Math.max(0, Number(offer.miles) || 0);
+    const minutes = Math.max(0, Number(offer.minutes) || 0);
+    const hours = minutes / 60;
+    const targetHourly = Math.max(0, Number(this.state.config.hourlyTarget) || 0);
+    const mileageRate = Math.max(0, Number(this.state.config.mileageRate) || 0);
+    const hourly = hours > 0 ? pay / hours : 0;
+    const perMile = miles > 0 ? pay / miles : 0;
+    const mileageAllowance = miles * mileageRate;
+    const adjusted = Math.max(0, pay - mileageAllowance);
+    const valid = pay > 0 && miles > 0 && minutes > 0;
+    const targetFloor = targetHourly > 0 ? targetHourly : 22;
+    let decision = '';
+    let status = 'Check';
+    let text = 'Enter payout, miles, and minutes before accepting it.';
+
+    if (valid) {
+      if (hourly >= targetFloor && perMile >= 1.5) {
+        decision = 'take';
+        status = 'Take';
+        text = `Strong offer: ${this.formatMoney(hourly)}/hr and ${this.formatMoney(perMile)}/mi beats the target.`;
+      } else if (hourly >= targetFloor * 0.85 && perMile >= 1.1) {
+        decision = 'maybe';
+        status = 'Maybe';
+        text = `Only take it if the drop-off fits the shift. Pace is ${this.formatMoney(hourly)}/hr and ${this.formatMoney(perMile)}/mi.`;
+      } else {
+        decision = 'skip';
+        status = 'Skip';
+        text = `Protect the shift. This misses the ${this.formatMoney(targetFloor)}/hr target or pays too little per mile.`;
+      }
+    }
+
+    return {
+      pay,
+      miles,
+      minutes,
+      hours,
+      hourly,
+      perMile,
+      mileageAllowance,
+      adjusted,
+      targetHourly: targetFloor,
+      valid,
+      decision,
+      status,
+      text
+    };
+  }
+
+  formatMoney(value) {
+    return new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(Number(value) || 0);
+  }
+
+  updateOfferGuardFromInputs() {
+    this.state.offerGuard = {
+      ...(this.state.offerGuard || this.createDefaultState().offerGuard),
+      pay: Math.max(0, parseFloat(this.offerPay?.value) || 0),
+      miles: Math.max(0, parseFloat(this.offerMiles?.value) || 0),
+      minutes: Math.max(0, parseFloat(this.offerMinutes?.value) || 0)
+    };
+    const metrics = this.getOfferGuardMetrics();
+    this.state.offerGuard.lastDecision = metrics.decision;
+    this.saveState();
+  }
+
+  updateOfferGuard() {
+    if (!this.offerGuardStatus) return;
+    const metrics = this.getOfferGuardMetrics();
+    if (this.state.offerGuard) this.state.offerGuard.lastDecision = metrics.decision;
+
+    this.offerGuardStatus.textContent = metrics.status;
+    this.offerHourly.textContent = `${this.formatMoney(metrics.hourly)}/hr`;
+    this.offerPerMile.textContent = `${this.formatMoney(metrics.perMile)}/mi`;
+    this.offerNetEstimate.textContent = this.formatMoney(metrics.adjusted);
+    this.offerGuardText.textContent = metrics.text;
+    if (this.btnUseOffer) this.btnUseOffer.disabled = !metrics.valid;
+    if (this.offerGuardSection) {
+      this.offerGuardSection.dataset.decision = metrics.decision || 'check';
+    }
+  }
+
+  clearOfferGuard() {
+    this.state.offerGuard = this.createDefaultState().offerGuard;
+    this.populateOfferInputs();
+    this.saveState();
+    this.showToast('Offer cleared.');
+  }
+
+  useOfferGuard() {
+    const metrics = this.getOfferGuardMetrics();
+    if (!metrics.valid) {
+      this.showToast('Enter payout, miles, and minutes first.', true);
+      return;
+    }
+
+    this.activateEntryTab('earnings');
+    this.openModal(this.actionModal);
+    const amountInput = document.getElementById('earningAmount');
+    const milesInput = document.getElementById('earningMiles');
+    const hoursInput = document.getElementById('earningHours');
+    const descInput = document.getElementById('earningDesc');
+
+    if (amountInput) amountInput.value = metrics.pay.toFixed(2);
+    if (milesInput) milesInput.value = metrics.miles.toFixed(1);
+    if (hoursInput) hoursInput.value = metrics.hours.toFixed(2);
+    if (descInput && !descInput.value) descInput.value = 'Accepted offer';
+    this.showToast('Offer loaded into earning entry.');
   }
 
   getBillCatalog() {
@@ -1019,6 +1168,15 @@ class Dashboard {
     }
     if (this.btnTimerReset) {
       this.btnTimerReset.addEventListener('click', () => this.resetRunTimer());
+    }
+    [this.offerPay, this.offerMiles, this.offerMinutes].forEach(input => {
+      if (input) input.addEventListener('input', () => this.updateOfferGuardFromInputs());
+    });
+    if (this.btnUseOffer) {
+      this.btnUseOffer.addEventListener('click', () => this.useOfferGuard());
+    }
+    if (this.btnClearOffer) {
+      this.btnClearOffer.addEventListener('click', () => this.clearOfferGuard());
     }
 
     if (this.onboardingForm) {
@@ -1408,6 +1566,7 @@ class Dashboard {
     const year = this.getPeriodSummary('year');
     const runway = this.getBabyRunway();
     const shield = this.getBillShield();
+    const offer = this.getOfferGuardMetrics();
     const summaryHeaders = ['Period', 'Gross', 'Expenses', 'Bills', 'Tax Reserve', 'Baby Fund', 'Take Home', 'Miles', 'Mileage Deduction', 'Hours', 'Runs'];
     const summaryRow = (label, data) => [
       label,
@@ -1457,6 +1616,15 @@ class Dashboard {
         record.paid ? 'Paid' : 'Unpaid'
       ]);
     });
+    rows.push([]);
+    rows.push(['Offer Guard']);
+    rows.push(['Decision', offer.status]);
+    rows.push(['Payout', offer.pay.toFixed(2)]);
+    rows.push(['Miles', offer.miles.toFixed(1)]);
+    rows.push(['Minutes', offer.minutes.toFixed(0)]);
+    rows.push(['Hourly Pace', offer.hourly.toFixed(2)]);
+    rows.push(['Per Mile', offer.perMile.toFixed(2)]);
+    rows.push(['After Miles', offer.adjusted.toFixed(2)]);
     rows.push([]);
     rows.push(['Archived Days']);
     rows.push(['Date', ...summaryHeaders.slice(1)]);
@@ -1606,6 +1774,7 @@ class Dashboard {
     this.taxReserve.textContent = f.format(totals.taxReserve);
     this.babyFund.textContent = f.format(totals.babyFund);
     this.mileageDeduction.textContent = f.format(totals.mileageDeduction);
+    this.updateOfferGuard();
     this.updateRunTimer();
 
     // Dynamic ring color based on progress

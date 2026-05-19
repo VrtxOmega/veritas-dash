@@ -80,6 +80,47 @@
           </div>
         </section>
 
+        <!-- Offer Guard -->
+        <section class="offer-guard glass-panel">
+          <div class="section-header compact">
+            <h2>Offer Guard</h2>
+            <span class="section-kicker" id="offerGuardStatus">Check</span>
+          </div>
+          <div class="offer-inputs">
+            <div class="input-group">
+              <label for="offerPay">Payout</label>
+              <input type="number" id="offerPay" class="modern-input" step="0.01" min="0" inputmode="decimal" placeholder="0.00" />
+            </div>
+            <div class="input-group">
+              <label for="offerMiles">Miles</label>
+              <input type="number" id="offerMiles" class="modern-input" step="0.1" min="0" inputmode="decimal" placeholder="0.0" />
+            </div>
+            <div class="input-group">
+              <label for="offerMinutes">Minutes</label>
+              <input type="number" id="offerMinutes" class="modern-input" step="1" min="0" inputmode="numeric" placeholder="0" />
+            </div>
+          </div>
+          <div class="offer-metrics">
+            <div class="offer-metric">
+              <span class="offer-label">Hourly</span>
+              <span class="offer-value" id="offerHourly">$0.00/hr</span>
+            </div>
+            <div class="offer-metric">
+              <span class="offer-label">Per Mile</span>
+              <span class="offer-value" id="offerPerMile">$0.00/mi</span>
+            </div>
+            <div class="offer-metric">
+              <span class="offer-label">After Miles</span>
+              <span class="offer-value" id="offerNetEstimate">$0.00</span>
+            </div>
+          </div>
+          <div class="offer-actions">
+            <button type="button" class="timer-btn primary" id="btnUseOffer" disabled>Use Offer</button>
+            <button type="button" class="timer-btn ghost" id="btnClearOffer">Clear</button>
+          </div>
+          <div class="next-move" id="offerGuardText">Enter an offer before accepting it.</div>
+        </section>
+
         <!-- Run Timer -->
         <section class="run-timer glass-panel">
           <div class="section-header compact">

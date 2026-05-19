@@ -139,6 +139,46 @@ button.status-chip:hover, button.status-chip:active { border-color: var(--vrts-g
 .stat-pill .stat-value { font-size: 1.2rem; font-weight: 600; }
 .stat-value.highlight { color: var(--vrts-gold); }
 
+/* Offer Guard */
+.offer-guard { padding: 1.25rem; }
+.offer-inputs {
+  display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 0.55rem;
+}
+.offer-inputs .modern-input {
+  padding: 0.75rem 0.65rem; font-size: 0.9rem;
+}
+.offer-metrics {
+  display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 0.55rem;
+  margin-top: 0.75rem;
+}
+.offer-metric {
+  min-height: 72px; padding: 0.75rem 0.65rem; border-radius: 14px;
+  background: rgba(255,255,255,0.04); border: 1px solid var(--vrts-border);
+}
+.offer-label {
+  display: block; color: var(--vrts-text-muted); font-size: 0.66rem;
+  text-transform: uppercase; letter-spacing: 0.04em; font-weight: 800; margin-bottom: 0.35rem;
+}
+.offer-value {
+  display: block; color: var(--vrts-text); font-family: var(--font-display);
+  font-size: clamp(0.85rem, 4.6vw, 1.08rem); font-weight: 850; overflow-wrap: anywhere;
+}
+.offer-guard[data-decision="take"] .section-kicker,
+.offer-guard[data-decision="take"] .offer-metric:first-child .offer-value {
+  color: var(--color-positive);
+}
+.offer-guard[data-decision="maybe"] .section-kicker,
+.offer-guard[data-decision="maybe"] .offer-metric:first-child .offer-value {
+  color: var(--vrts-gold);
+}
+.offer-guard[data-decision="skip"] .section-kicker,
+.offer-guard[data-decision="skip"] .offer-metric:first-child .offer-value {
+  color: var(--color-negative);
+}
+.offer-actions {
+  display: grid; grid-template-columns: 1fr 1fr; gap: 0.55rem; margin-top: 0.75rem;
+}
+
 /* Run Timer */
 .run-timer { padding: 1.25rem; }
 .timer-face {
@@ -722,6 +762,7 @@ select.modern-input { appearance: none; cursor: pointer; }
 
 @media (max-width: 420px) {
   .snapshot-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .offer-inputs, .offer-metrics { grid-template-columns: 1fr; }
   .top-nav { padding: 1rem 1rem; }
   .status-rail, .dashboard-content { padding-left: 1rem; padding-right: 1rem; }
   .settings-grid { grid-template-columns: 1fr; }

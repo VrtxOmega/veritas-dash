@@ -36,6 +36,7 @@ Veritas Dash is a static PWA that runs entirely in the browser and stores data i
 - Take-home calculation with bills, tax reserve, mileage deduction, and baby-fund planning
 - Miles/hours tracking for better hourly and deduction visibility
 - First-run quick setup for daily target, weekly target, tax reserve, baby-fund rate, fixed bills, and mileage rate
+- Offer Guard for checking payout, miles, minutes, hourly pace, and per-mile value before accepting a run
 - Local run timer for capturing shift duration and prefilling earning-entry hours
 - Bill Shield for due-date visibility, paid/unpaid flags, and next-14-day safe-spend guidance
 - Weekly command view for take-home pace, remaining goal, runs left, reserves, miles, and hours
@@ -58,6 +59,7 @@ Veritas Dash is a static PWA that runs entirely in the browser and stores data i
 | Expense Categorization | Choose gas, maintenance, meals, tolls, family, or other |
 | Tax + Baby Fund Planner | Calculates reserve and savings buckets from configured percentages |
 | Mileage + Hours | Tracks miles, mileage deduction estimate, and hourly pace |
+| Offer Guard | Evaluates a proposed run before accepting and can prefill the earnings form |
 | Run Timer | Tracks local elapsed shift time and prefills earning-entry hours on demand |
 | Bill Shield | Shows upcoming fixed bills, due days, paid status, and safe spend after 14-day protection |
 | First-Run Setup | Opens a quick local setup sheet for the numbers that drive the dashboard |
@@ -120,6 +122,7 @@ npx serve .
 | Shift | localStorage | id, date, startTime, endTime, earnings, mileage, category |
 | Expense | localStorage | id, date, amount, category, note |
 | Goal | localStorage | dailyTarget, weeklyTarget, hourlyTarget, currency |
+| Offer Guard | localStorage | pay, miles, minutes, lastDecision |
 | Timer | localStorage | status, startedAt, accumulatedMs, lastUsedHours |
 | Bill Shield | localStorage | dueDays, paid |
 | Settings | localStorage | taxRate, babyFundRate, mileageRate, fixedBills, babyPlan |
@@ -152,6 +155,7 @@ npx serve .
 | Baby Runway countdown + savings pace | Complete |
 | Run Timer with hours prefill | Complete |
 | Bill Shield due-date protection | Complete |
+| Offer Guard accept/skip calculator | Complete |
 | Multi-currency support | Planned |
 | Deeper tax export presets | Planned |
 | ShiftForge integration (scheduling + earnings) | Planned |
