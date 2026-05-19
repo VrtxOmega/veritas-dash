@@ -128,12 +128,20 @@ class Dashboard {
   copyToClipboard(text) {
     if (this.backupLinkOutput) {
       this.backupLinkOutput.value = text;
-      this.backupLinkOutput.focus();
-      this.backupLinkOutput.select();
+      this.backupLinkOutput.scrollTop = 0;
+      this.backupLinkOutput.scrollLeft = 0;
     }
 
     const fallbackCopy = () => {
+      const input = document.createElement('textarea');
+      input.value = text;
+      input.setAttribute('readonly', '');
+      input.style.position = 'fixed';
+      input.style.opacity = '0';
+      document.body.appendChild(input);
+      input.select();
       const copied = document.execCommand('copy');
+      input.remove();
       this.showToast(copied ? 'Backup link copied and shown.' : 'Backup link ready below.');
     };
 
@@ -196,6 +204,20 @@ class Dashboard {
     this.smartInsight = document.getElementById('insightText');
     this.weeklyEarned = document.getElementById('weeklyEarned');
     this.weeklyBarFill = document.getElementById('weeklyBarFill');
+    this.weekPaceStatus = document.getElementById('weekPaceStatus');
+    this.weekTakeHome = document.getElementById('weekTakeHome');
+    this.weekRemaining = document.getElementById('weekRemaining');
+    this.weekRunsLeft = document.getElementById('weekRunsLeft');
+    this.weekReserveTotal = document.getElementById('weekReserveTotal');
+    this.weekMileageTotal = document.getElementById('weekMileageTotal');
+    this.weekHoursTotal = document.getElementById('weekHoursTotal');
+    this.weekCommandText = document.getElementById('weekCommandText');
+    this.monthGross = document.getElementById('monthGross');
+    this.monthTaxReserve = document.getElementById('monthTaxReserve');
+    this.yearMiles = document.getElementById('yearMiles');
+    this.yearDeduction = document.getElementById('yearDeduction');
+    this.yearBabyFund = document.getElementById('yearBabyFund');
+    this.yearTakeHome = document.getElementById('yearTakeHome');
     this.greetingEmoji = document.getElementById('greetingEmoji');
     this.greetingHeadline = document.getElementById('greetingHeadline');
     this.greetingSub = document.getElementById('greetingSub');
@@ -228,6 +250,87 @@ class Dashboard {
     const total = rent + car + ins + util;
     const daily = total / 30;
     document.getElementById('setDailyBills').textContent = `$${daily.toFixed(2)}/day`;
+  }
+
+  getDateKey(date = new Date()) {
+    const y = date.getFullYear();
+    const m = String(date.getMonth() + 1).padStart(2, '0');
+    const d = String(date.getDate()).padStart(2, '0');
+    return `${y}-${m}-${d}`;
+  }
+
+  getStartOfWeek(date = new Date()) {
+    const start = new Date(date);
+    start.setHours(0, 0, 0, 0);
+    start.setDate(start.getDate() - start.getDay());
+    return start;
+  }
+
+  createEmptySummary() {
+    return {
+      gross: 0,
+      expenses: 0,
+      bills: 0,
+      net: 0,
+      taxReserve: 0,
+      takeHome: 0,
+      babyFund: 0,
+      spendable: 0,
+      miles: 0,
+      hours: 0,
+      mileageDeduction: 0,
+      runCount: 0,
+      days: 0
+    };
+  }
+
+  addSummary(target, source) {
+    Object.keys(target).forEach(key => {
+      target[key] += Number(source[key]) || 0;
+    });
+  }
+
+  getPeriodSummary(period) {
+    const now = new Date();
+    const weekStart = this.getStartOfWeek(now);
+    const weekEnd = new Date(weekStart);
+    weekEnd.setDate(weekStart.getDate() + 7);
+    const summary = this.createEmptySummary();
+
+    Object.entries(this.state.weeklyLog || {}).forEach(([dateStr, day]) => {
+      const date = new Date(`${dateStr}T12:00:00`);
+      const inPeriod =
+        period === 'week'
+          ? date >= weekStart && date < weekEnd
+          : period === 'month'
+            ? date.getFullYear() === now.getFullYear() && date.getMonth() === now.getMonth()
+            : date.getFullYear() === now.getFullYear();
+
+      if (inPeriod) {
+        this.addSummary(summary, {
+          gross: day.gross,
+          expenses: day.expenses,
+          bills: day.bills,
+          net: day.net,
+          taxReserve: day.taxReserve,
+          takeHome: day.takeHome ?? day.net,
+          babyFund: day.babyFund,
+          spendable: day.spendable,
+          miles: day.miles,
+          hours: day.hours,
+          mileageDeduction: day.mileageDeduction,
+          runCount: day.runCount,
+          days: 1
+        });
+      }
+    });
+
+    if (this.state.transactions.length > 0) {
+      const today = this.getTodayTotals();
+      this.addSummary(summary, { ...today, days: 1 });
+    }
+
+    return summary;
   }
 
   bindEvents() {
@@ -439,18 +542,21 @@ class Dashboard {
   }
 
   archiveToday() {
-    const today = new Date().toISOString().split('T')[0];
+    const today = this.getDateKey();
     const totals = this.getTodayTotals();
     this.state.weeklyLog[today] = {
       gross: totals.gross,
       expenses: totals.expenses,
+      bills: totals.bills,
       net: totals.net,
       takeHome: totals.takeHome,
       spendable: totals.spendable,
       taxReserve: totals.taxReserve,
       babyFund: totals.babyFund,
       miles: totals.miles,
-      hours: totals.hours
+      hours: totals.hours,
+      mileageDeduction: totals.mileageDeduction,
+      runCount: totals.runCount
     };
     this.state.transactions = [];
     this.state.notes = '';
@@ -499,65 +605,116 @@ class Dashboard {
   }
 
   exportToCsv() {
-    let csvContent = "Date,Type,Description,Category,Amount,Miles,Hours,Tax Reserve,Baby Fund,Take Home\n";
+    const rows = [];
+    const today = this.getTodayTotals();
+    const week = this.getPeriodSummary('week');
+    const month = this.getPeriodSummary('month');
+    const year = this.getPeriodSummary('year');
+    const summaryHeaders = ['Period', 'Gross', 'Expenses', 'Bills', 'Tax Reserve', 'Baby Fund', 'Take Home', 'Miles', 'Mileage Deduction', 'Hours', 'Runs'];
+    const summaryRow = (label, data) => [
+      label,
+      data.gross.toFixed(2),
+      data.expenses.toFixed(2),
+      data.bills.toFixed(2),
+      data.taxReserve.toFixed(2),
+      data.babyFund.toFixed(2),
+      data.takeHome.toFixed(2),
+      data.miles.toFixed(1),
+      data.mileageDeduction.toFixed(2),
+      data.hours.toFixed(2),
+      data.runCount || 0
+    ];
 
-    // Add archived days
-    if (this.state.weeklyLog) {
-      Object.keys(this.state.weeklyLog).sort().forEach(dateStr => {
-        const day = this.state.weeklyLog[dateStr];
-        csvContent += `${dateStr},Summary,Daily Gross,,${day.gross.toFixed(2)},${(day.miles || 0).toFixed(1)},${(day.hours || 0).toFixed(2)},,,\n`;
-        csvContent += `${dateStr},Summary,Daily Expenses,,${day.expenses.toFixed(2)},,,,,\n`;
-        csvContent += `${dateStr},Summary,Daily Take Home,,,${(day.miles || 0).toFixed(1)},${(day.hours || 0).toFixed(2)},${(day.taxReserve || 0).toFixed(2)},${(day.babyFund || 0).toFixed(2)},${(day.takeHome ?? day.net).toFixed(2)}\n`;
-      });
-    }
+    rows.push(['Sovereign Dash Export']);
+    rows.push(['Generated', new Date().toLocaleString()]);
+    rows.push([]);
+    rows.push(summaryHeaders);
+    rows.push(summaryRow('Current Day', today));
+    rows.push(summaryRow('This Week', week));
+    rows.push(summaryRow('This Month', month));
+    rows.push(summaryRow('Year To Date', year));
+    rows.push([]);
+    rows.push(['Archived Days']);
+    rows.push(['Date', ...summaryHeaders.slice(1)]);
 
-    // Add current transactions
-    if (this.state.transactions) {
-      this.state.transactions.forEach(t => {
-        const dateStr = new Date(t.timestamp).toLocaleDateString();
-        const desc = t.description ? t.description.replace(/"/g, '""') : '';
-        csvContent += `${dateStr},${t.type},"${desc}",${t.category || ''},${t.amount.toFixed(2)},${(t.miles || 0).toFixed(1)},${(t.hours || 0).toFixed(2)},,,\n`;
-      });
-    }
+    Object.keys(this.state.weeklyLog || {}).sort().forEach(dateStr => {
+      const day = this.state.weeklyLog[dateStr];
+      rows.push([
+        dateStr,
+        (Number(day.gross) || 0).toFixed(2),
+        (Number(day.expenses) || 0).toFixed(2),
+        (Number(day.bills) || 0).toFixed(2),
+        (Number(day.taxReserve) || 0).toFixed(2),
+        (Number(day.babyFund) || 0).toFixed(2),
+        (Number(day.takeHome ?? day.net) || 0).toFixed(2),
+        (Number(day.miles) || 0).toFixed(1),
+        (Number(day.mileageDeduction) || 0).toFixed(2),
+        (Number(day.hours) || 0).toFixed(2),
+        Number(day.runCount) || 0
+      ]);
+    });
+
+    rows.push([]);
+    rows.push(['Current Transactions']);
+    rows.push(['Date', 'Time', 'Type', 'Description', 'Category', 'Amount', 'Miles', 'Hours']);
+
+    (this.state.transactions || []).forEach(t => {
+      const date = new Date(t.timestamp);
+      rows.push([
+        this.getDateKey(date),
+        date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+        t.type,
+        t.description || '',
+        t.category || '',
+        (Number(t.amount) || 0).toFixed(2),
+        (Number(t.miles) || 0).toFixed(1),
+        (Number(t.hours) || 0).toFixed(2)
+      ]);
+    });
+
+    const csvContent = rows.map(row => this.toCsvRow(row)).join('\n');
 
     const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
     const url = URL.createObjectURL(blob);
     const link = document.createElement("a");
-    link.setAttribute("href", url);
-    link.setAttribute("download", `sovereign_dash_export_${new Date().toISOString().split('T')[0]}.csv`);
+    link.setAttribute('href', url);
+    link.setAttribute('download', `sovereign_dash_export_${this.getDateKey()}.csv`);
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
+    URL.revokeObjectURL(url);
     
     this.showToast('CSV Exported! 📊');
+  }
+
+  toCsvRow(row) {
+    return row.map(value => {
+      const text = String(value ?? '');
+      return /[",\n]/.test(text) ? `"${text.replace(/"/g, '""')}"` : text;
+    }).join(',');
   }
 
   getWeeklyData() {
     const now = new Date();
     const dayOfWeek = now.getDay();
-    let weekTotal = 0;
+    const week = this.getPeriodSummary('week');
     const daysWithData = new Set();
 
     // Calculate from current week entries
     for (let i = 0; i < 7; i++) {
       const d = new Date(now);
       d.setDate(now.getDate() - dayOfWeek + i);
-      const key = d.toISOString().split('T')[0];
+      const key = this.getDateKey(d);
       if (this.state.weeklyLog[key]) {
-        const day = this.state.weeklyLog[key];
-        weekTotal += day.takeHome ?? day.net;
         daysWithData.add(i);
       }
     }
 
-    // Add today's live data
-    const totals = this.getTodayTotals();
     if (this.state.transactions.length > 0) {
-      weekTotal += totals.takeHome;
       daysWithData.add(dayOfWeek);
     }
 
-    return { weekTotal, daysWithData, dayOfWeek };
+    return { weekTotal: week.takeHome, daysWithData, dayOfWeek, week };
   }
 
   getTodayTotals() {
@@ -565,12 +722,14 @@ class Dashboard {
     let expenses = 0;
     let miles = 0;
     let hours = 0;
+    let runCount = 0;
 
     this.state.transactions.forEach(t => {
       if (t.type === 'earning') {
         gross += Number(t.amount) || 0;
         miles += Number(t.miles) || 0;
         hours += Number(t.hours) || 0;
+        runCount++;
       } else if (t.type === 'expense') {
         expenses += Number(t.amount) || 0;
       }
@@ -599,7 +758,8 @@ class Dashboard {
       miles,
       hours,
       mileageDeduction,
-      hourlyRate
+      hourlyRate,
+      runCount
     };
   }
 
@@ -650,6 +810,8 @@ class Dashboard {
 
     // Weekly
     this.updateWeeklyProgress();
+    this.updateWeekCommand();
+    this.updateTaxSnapshot();
 
     // Hourly Rate
     this.calculateHourlyRate(totals.gross, totals.hours);
@@ -701,6 +863,47 @@ class Dashboard {
     } else {
       this.nextMoveText.textContent = `${f.format(remaining)} left to goal. At this pace, plan about ${runsNeeded} more run${runsNeeded === 1 ? '' : 's'}.`;
     }
+  }
+
+  updateWeekCommand() {
+    const week = this.getPeriodSummary('week');
+    const f = new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' });
+    const remaining = Math.max(0, this.state.config.weeklyGoal - week.takeHome);
+    const avgRun = week.runCount > 0 ? week.gross / week.runCount : 0;
+    const runsLeft = remaining > 0 && avgRun > 0 ? Math.ceil(remaining / avgRun) : 0;
+    const reserveTotal = week.taxReserve + week.babyFund;
+    const weekPercent = this.state.config.weeklyGoal > 0 ? (week.takeHome / this.state.config.weeklyGoal) * 100 : 0;
+
+    this.weekTakeHome.textContent = f.format(week.takeHome);
+    this.weekRemaining.textContent = f.format(remaining);
+    this.weekRunsLeft.textContent = String(runsLeft);
+    this.weekReserveTotal.textContent = f.format(reserveTotal);
+    this.weekMileageTotal.textContent = `${week.miles.toFixed(1)} mi`;
+    this.weekHoursTotal.textContent = `${week.hours.toFixed(2)} hr`;
+
+    if (weekPercent >= 100) {
+      this.weekPaceStatus.textContent = 'Covered';
+      this.weekCommandText.textContent = `Weekly goal covered. Reserve ${f.format(reserveTotal)} and keep the next run optional.`;
+    } else if (week.runCount === 0) {
+      this.weekPaceStatus.textContent = 'Plan';
+      this.weekCommandText.textContent = 'Build the week from today\'s first run.';
+    } else {
+      this.weekPaceStatus.textContent = `${Math.max(0, Math.round(weekPercent))}%`;
+      this.weekCommandText.textContent = `${f.format(remaining)} left this week. At ${f.format(avgRun)} average gross/run, plan about ${runsLeft} more run${runsLeft === 1 ? '' : 's'}.`;
+    }
+  }
+
+  updateTaxSnapshot() {
+    const month = this.getPeriodSummary('month');
+    const year = this.getPeriodSummary('year');
+    const f = new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' });
+
+    this.monthGross.textContent = f.format(month.gross);
+    this.monthTaxReserve.textContent = f.format(month.taxReserve);
+    this.yearMiles.textContent = year.miles.toFixed(1);
+    this.yearDeduction.textContent = f.format(year.mileageDeduction);
+    this.yearBabyFund.textContent = f.format(year.babyFund);
+    this.yearTakeHome.textContent = f.format(year.takeHome);
   }
 
   renderCareChecklist() {

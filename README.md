@@ -35,6 +35,8 @@ Veritas Dash is a static PWA that runs entirely in the browser and stores data i
 - Expense tracking (gas, maintenance, meals, tolls, family, other)
 - Take-home calculation with bills, tax reserve, mileage deduction, and baby-fund planning
 - Miles/hours tracking for better hourly and deduction visibility
+- Weekly command view for take-home pace, remaining goal, runs left, reserves, miles, and hours
+- Month and year-to-date export snapshot for tax-prep visibility
 - Local backup links for moving private data between browsers without a backend
 - A non-medical shift readiness checklist for water, snack, charger, fuel, and break plan
 - Weekly and monthly aggregated analytics
@@ -51,6 +53,8 @@ Veritas Dash is a static PWA that runs entirely in the browser and stores data i
 | Expense Categorization | Choose gas, maintenance, meals, tolls, family, or other |
 | Tax + Baby Fund Planner | Calculates reserve and savings buckets from configured percentages |
 | Mileage + Hours | Tracks miles, mileage deduction estimate, and hourly pace |
+| Week Command | Shows weekly take-home, remaining goal, estimated runs left, reserve total, miles, and hours |
+| Export Snapshot | Surfaces month and year-to-date totals used in the CSV report |
 | Local Backup Link | Generates a private restore link for browser-to-browser migration |
 | Smart Insights | Contextual analysis: "You're 73% to goal — $41.50 to go" |
 | PWA Installable | `manifest.json` + icons for standalone mobile app experience |

@@ -175,6 +175,35 @@ h1, h2, h3, .logo-text, .ring-value, .stat-value { font-family: var(--font-displ
 }
 .care-chip:active { transform: scale(0.97); }
 
+/* Week Command + Export Snapshot */
+.week-command, .tax-snapshot { padding: 1.25rem; }
+.command-grid, .snapshot-grid {
+  display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0.6rem;
+}
+.snapshot-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+.command-cell, .snapshot-cell {
+  padding: 0.8rem; border-radius: 14px; background: rgba(255,255,255,0.04);
+  border: 1px solid var(--vrts-border); min-width: 0;
+}
+.command-cell:first-child { border-color: hsla(150, 70%, 45%, 0.32); }
+.command-cell:nth-child(2) { border-color: hsla(44, 70%, 56%, 0.32); }
+.command-cell:nth-child(3) { border-color: hsla(210, 82%, 68%, 0.28); }
+.command-cell:nth-child(4) { border-color: hsla(330, 86%, 74%, 0.28); }
+.command-label, .snapshot-label {
+  display: block; color: var(--vrts-text-muted); font-size: 0.68rem;
+  text-transform: uppercase; letter-spacing: 0.04em; font-weight: 800; margin-bottom: 0.35rem;
+}
+.command-value, .snapshot-value {
+  display: block; font-family: var(--font-display); font-weight: 800;
+  font-size: clamp(0.95rem, 6vw, 1.35rem); color: var(--vrts-text);
+  overflow-wrap: anywhere;
+}
+.snapshot-value { font-size: clamp(0.85rem, 5vw, 1.12rem); }
+.week-meta {
+  display: flex; justify-content: space-between; gap: 0.75rem; margin-top: 0.75rem;
+  color: var(--vrts-text-muted); font-size: 0.8rem; font-weight: 700;
+}
+
 /* Weekly Progress */
 .weekly-section { padding: 1.25rem; }
 .weekly-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.75rem; }
@@ -466,6 +495,10 @@ select.modern-input { appearance: none; cursor: pointer; }
 }
 .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
 .toast.error { border-color: hsla(350, 70%, 55%, 0.45); color: #ffd6dc; }
+
+@media (max-width: 420px) {
+  .snapshot-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
 
 /* Animations */
 @keyframes slideUp { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
