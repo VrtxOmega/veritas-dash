@@ -16,7 +16,7 @@
 
 ---
 
-Veritas Dash is a sovereign, browser-native financial dashboard built for gig-workers. It tracks daily earnings, expenses, mileage, and delivers real-time net-profit analytics with a VERITAS gold-and-obsidian interface. All data is stored locally — no server, no tracking, no accounts. Installable as a Progressive Web App (PWA) for standalone mobile experience.
+Veritas Dash is a sovereign, browser-native financial dashboard built for gig-workers. It tracks daily earnings, expenses, miles, hours, bill allocation, tax reserve, baby-fund savings, and take-home pace with a VERITAS gold-and-obsidian interface. All data is stored locally — no server, no tracking, no accounts. Installable as a Progressive Web App (PWA) for standalone mobile experience.
 
 ---
 
@@ -28,12 +28,15 @@ Within the VERITAS & Sovereign Ecosystem, operator productivity is sovereign pro
 
 ## Overview
 
-Veritas Dash is a single-file static PWA that runs entirely in the browser. It connects to a local Supabase backend (configured at first launch) for optional cloud sync, but defaults to localStorage for offline operation. The dashboard presents:
+Veritas Dash is a static PWA that runs entirely in the browser and stores data in `localStorage`. The dashboard presents:
 
 - A hero progress ring visualizing daily earnings against goal
 - Shift-by-shift entry with one-tap categorization
-- Expense tracking (gas, maintenance, meals, tolls)
-- Net profit calculation with smart insight summaries
+- Expense tracking (gas, maintenance, meals, tolls, family, other)
+- Take-home calculation with bills, tax reserve, mileage deduction, and baby-fund planning
+- Miles/hours tracking for better hourly and deduction visibility
+- Local backup links for moving private data between browsers without a backend
+- A non-medical shift readiness checklist for water, snack, charger, fuel, and break plan
 - Weekly and monthly aggregated analytics
 - Confetti celebration on goal achievement
 
@@ -45,10 +48,13 @@ Veritas Dash is a single-file static PWA that runs entirely in the browser. It c
 |---|---|
 | One-Tap Shift Entry | Log a shift in under 10 seconds with earnings and mileage |
 | Real-Time Profit Ring | SVG-driven progress visualization with color-coded goal status |
-| Expense Categorization | Auto-suggest categories based on amount and time of day |
+| Expense Categorization | Choose gas, maintenance, meals, tolls, family, or other |
+| Tax + Baby Fund Planner | Calculates reserve and savings buckets from configured percentages |
+| Mileage + Hours | Tracks miles, mileage deduction estimate, and hourly pace |
+| Local Backup Link | Generates a private restore link for browser-to-browser migration |
 | Smart Insights | Contextual analysis: "You're 73% to goal — $41.50 to go" |
-| PWA Installable | `manifest.json` + service worker for standalone mobile app experience |
-| Offline-First | All data persists in `localStorage`; syncs when online |
+| PWA Installable | `manifest.json` + icons for standalone mobile app experience |
+| Offline-First | All data persists in `localStorage`; no account or backend required |
 | Weekly/Monthly Rollups | Aggregated views with trend detection |
 | Dark Mode (Default) | VERITAS obsidian-and-gold aesthetic; no light mode toggle required |
 
@@ -59,19 +65,14 @@ Veritas Dash is a single-file static PWA that runs entirely in the browser. It c
 ```
 +------------------+     +------------------+     +------------------+
 |   PWA SHELL      | ---> |   INDEX.HTML     | ---> |  VANILLA JS LOGIC |
-|  Manifest + SW   |     |  Gold-and-Obsidian|     |  Earnings calc   |
+|  Manifest + icons|     |  Gold-and-Obsidian|     |  Earnings calc   |
 |  PWA icons       |     |  Glassmorphism UI |     |  Expense tracker |
 +------------------+     +------------------+     |  Goal engine     |
                        |                        +------------------+
                        v
               +------------------+
               |  LOCAL STORAGE   |
-              |  (default mode)  |
-              +------------------+
-                       |
-              +--------v---------+
-              |  SUPABASE SYNC   |
-              |  (optional)      |
+              |  (only mode)     |
               +------------------+
 ```
 
@@ -103,17 +104,18 @@ npx serve .
 |---|---|---|
 | Shift | localStorage | id, date, startTime, endTime, earnings, mileage, category |
 | Expense | localStorage | id, date, amount, category, note |
-| Goal | localStorage | dailyTarget, weeklyTarget, currency |
-| Settings | localStorage | supabaseUrl, supabaseKey, themePrefs |
+| Goal | localStorage | dailyTarget, weeklyTarget, hourlyTarget, currency |
+| Settings | localStorage | taxRate, babyFundRate, mileageRate, fixedBills |
+| Care Check | localStorage | water, snack, charger, fuel, breakPlan |
 
 ---
 
 ## Security & Sovereignty
 
 - **No server-side processing**: All logic runs in the browser. No backend API processes your earnings data.
-- **Private by default**: Cloud sync is opt-in via Supabase credentials you control.
+- **Private by default**: Backup/share is link-based and user-triggered; there is no built-in cloud sync.
 - **Zero telemetry**: No analytics, no tracking pixels, no crash reporting.
-- **Local encryption**: If Supabase sync is enabled, row-level security (RLS) policies govern data access.
+- **Local storage warning**: Browser storage is private to the device/browser profile, but it is not a substitute for an encrypted vault.
 
 ---
 
@@ -129,6 +131,7 @@ npx serve .
 | Multi-currency support | Planned |
 | Tax export (1099) | Planned |
 | ShiftForge integration (scheduling + earnings) | Planned |
+| Optional encrypted sync | Planned |
 
 ---
 

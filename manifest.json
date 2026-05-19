@@ -1,8 +1,9 @@
 {
   "name": "Sovereign Dash",
   "short_name": "Sovereign Dash",
-  "description": "Premium gig-worker financial management.",
-  "start_url": "./index.html",
+  "description": "Local-first gig-worker earnings, tax reserve, mileage, and family-fund dashboard.",
+  "start_url": "/veritas-dash/",
+  "scope": "/veritas-dash/",
   "display": "standalone",
   "background_color": "#0b0d13",
   "theme_color": "#c9a84c",

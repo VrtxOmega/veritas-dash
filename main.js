@@ -1,30 +1,14 @@
 import './style.css'
 
-const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL || 'https://xiprgjpgbsytamemoraa.supabase.co';
-const SUPABASE_KEY = import.meta.env.VITE_SUPABASE_KEY || '';
-let supabase = null;
-if (window.supabase && SUPABASE_KEY) {
-  supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
-} else if (window.supabase) {
-  console.warn("Supabase key is not configured. Cloud sync disabled.");
-}
+const STORAGE_KEY = 'sovereign_dash_v4';
+const LEGACY_STORAGE_KEY = 'sovereign_dash_v3';
 
 class Dashboard {
   constructor() {
-    this.state = {
-      transactions: [],
-      weeklyLog: {},
-      notes: '',
-      config: {
-        dailyGoal: 150.0,
-        weeklyGoal: 1000.0,
-        dailyBills: 20.0,
-        monthlyBills: { rent: 0, car: 0, insurance: 0, utilities: 0 }
-      }
-    };
-    
+    this.state = this.createDefaultState();
+
     this.confettiTriggered = false;
-    this.pushTimeout = null;
+    this.notesStatusTimeout = null;
     this.loadState();
     this.initDOM();
     this.bindEvents();
@@ -33,81 +17,61 @@ class Dashboard {
     this.checkUrlForBackup();
   }
 
+  createDefaultState() {
+    return {
+      transactions: [],
+      weeklyLog: {},
+      notes: '',
+      care: { water: false, snack: false, charger: false, fuel: false, break: false },
+      config: {
+        dailyGoal: 150.0,
+        weeklyGoal: 1000.0,
+        dailyBills: 20.0,
+        taxRate: 20.0,
+        babyFundRate: 10.0,
+        mileageRate: 0.67,
+        hourlyTarget: 22.0,
+        monthlyBills: { rent: 0, car: 0, insurance: 0, utilities: 0 }
+      }
+    };
+  }
+
+  mergeState(saved) {
+    const defaults = this.createDefaultState();
+    const config = {
+      ...defaults.config,
+      ...(saved.config || {}),
+      monthlyBills: {
+        ...defaults.config.monthlyBills,
+        ...((saved.config && saved.config.monthlyBills) || {})
+      }
+    };
+
+    return {
+      ...defaults,
+      ...saved,
+      transactions: Array.isArray(saved.transactions) ? saved.transactions : defaults.transactions,
+      weeklyLog: saved.weeklyLog || defaults.weeklyLog,
+      care: { ...defaults.care, ...(saved.care || {}) },
+      config
+    };
+  }
+
   loadState() {
-    const saved = localStorage.getItem('sovereign_dash_v3');
+    const saved = localStorage.getItem(STORAGE_KEY) || localStorage.getItem(LEGACY_STORAGE_KEY);
     if (saved) {
-      const parsed = JSON.parse(saved);
-      this.state = { ...this.state, ...parsed };
-      if (!this.state.weeklyLog) this.state.weeklyLog = {};
+      try {
+        const parsed = JSON.parse(saved);
+        this.state = this.mergeState(parsed);
+      } catch (e) {
+        console.warn('Saved dashboard state could not be loaded.', e);
+      }
     }
   }
 
   saveState() {
-    localStorage.setItem('sovereign_dash_v3', JSON.stringify(this.state));
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(this.state));
     this.updateDashboard();
-    
-    if (this.state.config && this.state.config.syncPin && supabase) {
-      if (this.pushTimeout) clearTimeout(this.pushTimeout);
-      this.pushTimeout = setTimeout(() => {
-        this.pushState(this.state.config.syncPin);
-      }, 1500);
-    }
-  }
-
-  async pushState(pin) {
-    if (!pin) return;
-    try {
-      const { error } = await supabase
-        .from('veritas_dash')
-        .upsert({ id: pin, state: this.state });
-      
-      if (error) throw error;
-      // Optional: Add a subtle visual indicator for successful auto-save
-      console.log('Cloud sync complete! ☁️✅');
-    } catch (e) {
-      console.error('Cloud sync failed', e);
-    }
-  }
-
-  async pullState(pin) {
-    if (!pin) {
-      this.showToast('Please enter a PIN first', true);
-      return;
-    }
-    
-    try {
-      this.showToast('Pulling backup... ⏳');
-      const { data, error } = await supabase
-        .from('veritas_dash')
-        .select('state')
-        .eq('id', pin)
-        .single();
-        
-      if (error) throw error;
-      
-      if (data && data.state) {
-        const state = data.state;
-        if (!this.validateState(state)) {
-          this.showToast('Backup data is corrupted or invalid', true);
-          return;
-        }
-
-        if (confirm('Backup found! Restore it and replace current data?')) {
-          this.state = data.state;
-          // Ensure the pin is preserved in the restored state if it wasn't there
-          if (!this.state.config) this.state.config = {};
-          this.state.config.syncPin = pin;
-          this.saveState();
-          this.initDOM(); // Re-populate inputs
-          this.showToast('Backup restored successfully! 🎉');
-        }
-      } else {
-        this.showToast('No backup found for this PIN', true);
-      }
-    } catch (e) {
-      console.error(e);
-      this.showToast('Failed to pull backup ❌', true);
-    }
   }
 
   checkUrlForBackup() {
@@ -120,8 +84,10 @@ class Dashboard {
         
         if (parsedState && parsedState.config) {
           if (confirm('A backup was found in the URL. Do you want to restore it? This will replace your current data.')) {
-            this.state = parsedState;
+            this.state = this.mergeState(parsedState);
             this.saveState();
+            this.initDOM();
+            this.bindCareState();
             this.showToast('Backup restored successfully! 🎉');
           }
         }
@@ -160,10 +126,31 @@ class Dashboard {
   }
 
   copyToClipboard(text) {
-    navigator.clipboard.writeText(text).then(() => {
-      this.showToast('Backup link copied to clipboard!');
-    }).catch(() => {
-      this.showToast('Failed to copy link.', true);
+    if (this.backupLinkOutput) {
+      this.backupLinkOutput.value = text;
+      this.backupLinkOutput.focus();
+      this.backupLinkOutput.select();
+    }
+
+    const fallbackCopy = () => {
+      const copied = document.execCommand('copy');
+      this.showToast(copied ? 'Backup link copied and shown.' : 'Backup link ready below.');
+    };
+
+    if (!navigator.clipboard || !window.isSecureContext) {
+      fallbackCopy();
+      return;
+    }
+
+    navigator.clipboard.writeText(text)
+      .then(() => this.showToast('Backup link copied and shown.'))
+      .catch(() => fallbackCopy());
+  }
+
+  bindCareState() {
+    this.careBtns.forEach(btn => {
+      const key = btn.dataset.care;
+      btn.classList.toggle('active', !!this.state.care[key]);
     });
   }
 
@@ -174,6 +161,13 @@ class Dashboard {
     this.dailyProgressText = document.getElementById('dailyProgressText');
     this.remainingToGoal = document.getElementById('remainingToGoal');
     this.dailyGoalDisplay = document.getElementById('dailyGoalDisplay');
+    this.spendableCash = document.getElementById('spendableCash');
+    this.taxReserve = document.getElementById('taxReserve');
+    this.babyFund = document.getElementById('babyFund');
+    this.mileageDeduction = document.getElementById('mileageDeduction');
+    this.nextMoveText = document.getElementById('nextMoveText');
+    this.careProgress = document.getElementById('careProgress');
+    this.careBtns = document.querySelectorAll('.care-chip');
     this.grossEarnings = document.getElementById('grossEarnings');
     this.shiftExpenses = document.getElementById('shiftExpenses');
     this.allocatedBills = document.getElementById('allocatedBills');
@@ -193,6 +187,7 @@ class Dashboard {
     this.closeSettingsBtn = document.getElementById('closeSettingsBtn');
     this.clearTodayBtn = document.getElementById('clearTodayBtn');
     this.btnBackup = document.getElementById('btnBackup');
+    this.backupLinkOutput = document.getElementById('backupLinkOutput');
     this.earningsForm = document.getElementById('earningsForm');
     this.expensesForm = document.getElementById('expensesForm');
     this.settingsForm = document.getElementById('settingsForm');
@@ -213,7 +208,10 @@ class Dashboard {
     // Populate Settings
     document.getElementById('setDailyGoal').value = this.state.config.dailyGoal;
     document.getElementById('setWeeklyGoal').value = this.state.config.weeklyGoal;
-    document.getElementById('syncPin').value = this.state.config.syncPin || '';
+    document.getElementById('setTaxRate').value = this.state.config.taxRate;
+    document.getElementById('setBabyFundRate').value = this.state.config.babyFundRate;
+    document.getElementById('setMileageRate').value = this.state.config.mileageRate;
+    document.getElementById('setHourlyTarget').value = this.state.config.hourlyTarget;
     const mb = this.state.config.monthlyBills || { rent: 0, car: 0, insurance: 0, utilities: 0 };
     document.getElementById('setRent').value = mb.rent || '';
     document.getElementById('setCar').value = mb.car || '';
@@ -262,6 +260,14 @@ class Dashboard {
     if (this.btnBackup) {
       this.btnBackup.addEventListener('click', () => this.generateBackupLink());
     }
+
+    this.careBtns.forEach(btn => {
+      btn.addEventListener('click', () => {
+        const key = btn.dataset.care;
+        this.state.care[key] = !this.state.care[key];
+        this.saveState();
+      });
+    });
 
     // Tab Logic
     this.tabBtns.forEach(btn => {
@@ -327,8 +333,10 @@ class Dashboard {
       e.preventDefault();
       const amount = parseFloat(document.getElementById('earningAmount').value);
       const desc = document.getElementById('earningDesc').value || 'DoorDash Run';
+      const miles = parseFloat(document.getElementById('earningMiles').value) || 0;
+      const hours = parseFloat(document.getElementById('earningHours').value) || 0;
       if (amount > 0) {
-        this.addTransaction('earning', amount, desc);
+        this.addTransaction('earning', amount, desc, { miles, hours });
         this.earningsForm.reset();
         this.closeAllModals();
         this.showToast(`+$${amount.toFixed(2)} logged! 🎉`);
@@ -340,8 +348,9 @@ class Dashboard {
       e.preventDefault();
       const amount = parseFloat(document.getElementById('expenseAmount').value);
       const desc = document.getElementById('expenseDesc').value || 'Expense';
+      const category = document.getElementById('expenseCategory').value || 'Other';
       if (amount > 0) {
-        this.addTransaction('expense', amount, desc);
+        this.addTransaction('expense', amount, desc, { category });
         this.expensesForm.reset();
         this.closeAllModals();
         this.showToast(`-$${amount.toFixed(2)} recorded`);
@@ -353,7 +362,10 @@ class Dashboard {
       e.preventDefault();
       this.state.config.dailyGoal = parseFloat(document.getElementById('setDailyGoal').value) || 0;
       this.state.config.weeklyGoal = parseFloat(document.getElementById('setWeeklyGoal').value) || 0;
-      this.state.config.syncPin = document.getElementById('syncPin').value.trim();
+      this.state.config.taxRate = parseFloat(document.getElementById('setTaxRate').value) || 0;
+      this.state.config.babyFundRate = parseFloat(document.getElementById('setBabyFundRate').value) || 0;
+      this.state.config.mileageRate = parseFloat(document.getElementById('setMileageRate').value) || 0;
+      this.state.config.hourlyTarget = parseFloat(document.getElementById('setHourlyTarget').value) || 0;
       const rent = parseFloat(document.getElementById('setRent').value) || 0;
       const car = parseFloat(document.getElementById('setCar').value) || 0;
       const insurance = parseFloat(document.getElementById('setInsurance').value) || 0;
@@ -364,15 +376,6 @@ class Dashboard {
       this.closeAllModals();
       this.showToast('Settings saved! ✅');
     });
-
-    // Sync Pin Pull
-    const cloudPullBtn = document.getElementById('cloudPullBtn');
-    if (cloudPullBtn) {
-      cloudPullBtn.addEventListener('click', () => {
-        const pin = document.getElementById('syncPin').value.trim();
-        this.pullState(pin);
-      });
-    }
   }
 
   updateGreeting() {
@@ -414,12 +417,15 @@ class Dashboard {
     if (this.historyModal) this.historyModal.classList.remove('active');
   }
 
-  addTransaction(type, amount, description) {
+  addTransaction(type, amount, description, details = {}) {
     const txn = {
       id: crypto.randomUUID(),
       type,
-      amount,
+      amount: Number(amount) || 0,
       description,
+      miles: Number(details.miles) || 0,
+      hours: Number(details.hours) || 0,
+      category: details.category || (type === 'earning' ? 'Earning' : 'Other'),
       timestamp: new Date().toISOString()
     };
     this.state.transactions.unshift(txn);
@@ -434,15 +440,21 @@ class Dashboard {
 
   archiveToday() {
     const today = new Date().toISOString().split('T')[0];
-    let gross = 0, expenses = 0;
-    this.state.transactions.forEach(t => {
-      if (t.type === 'earning') gross += t.amount;
-      else expenses += t.amount;
-    });
-    const net = gross - expenses - this.state.config.dailyBills;
-    this.state.weeklyLog[today] = { gross, expenses, net };
+    const totals = this.getTodayTotals();
+    this.state.weeklyLog[today] = {
+      gross: totals.gross,
+      expenses: totals.expenses,
+      net: totals.net,
+      takeHome: totals.takeHome,
+      spendable: totals.spendable,
+      taxReserve: totals.taxReserve,
+      babyFund: totals.babyFund,
+      miles: totals.miles,
+      hours: totals.hours
+    };
     this.state.transactions = [];
     this.state.notes = '';
+    this.state.care = this.createDefaultState().care;
     if (this.dailyNotes) {
       this.dailyNotes.value = '';
     }
@@ -472,13 +484,14 @@ class Dashboard {
       item.innerHTML = `
         <div class="history-item-header">
           <span class="history-date">${displayDate}</span>
-          <span class="history-net ${data.net >= 0 ? 'positive' : 'negative'}">
-            $${data.net.toFixed(2)}
+          <span class="history-net ${(data.takeHome ?? data.net) >= 0 ? 'positive' : 'negative'}">
+            $${(data.takeHome ?? data.net).toFixed(2)}
           </span>
         </div>
         <div class="history-item-details">
           <span>Gross: $${data.gross.toFixed(2)}</span>
           <span>Expenses: $${data.expenses.toFixed(2)}</span>
+          <span>Miles: ${(data.miles || 0).toFixed(1)}</span>
         </div>
       `;
       this.historyList.appendChild(item);
@@ -486,15 +499,15 @@ class Dashboard {
   }
 
   exportToCsv() {
-    let csvContent = "Date,Type,Description,Amount,Net Profit (Daily)\n";
+    let csvContent = "Date,Type,Description,Category,Amount,Miles,Hours,Tax Reserve,Baby Fund,Take Home\n";
 
     // Add archived days
     if (this.state.weeklyLog) {
       Object.keys(this.state.weeklyLog).sort().forEach(dateStr => {
         const day = this.state.weeklyLog[dateStr];
-        csvContent += `${dateStr},Summary,Daily Gross,${day.gross.toFixed(2)},\n`;
-        csvContent += `${dateStr},Summary,Daily Expenses,${day.expenses.toFixed(2)},\n`;
-        csvContent += `${dateStr},Summary,Net Profit,,${day.net.toFixed(2)}\n`;
+        csvContent += `${dateStr},Summary,Daily Gross,,${day.gross.toFixed(2)},${(day.miles || 0).toFixed(1)},${(day.hours || 0).toFixed(2)},,,\n`;
+        csvContent += `${dateStr},Summary,Daily Expenses,,${day.expenses.toFixed(2)},,,,,\n`;
+        csvContent += `${dateStr},Summary,Daily Take Home,,,${(day.miles || 0).toFixed(1)},${(day.hours || 0).toFixed(2)},${(day.taxReserve || 0).toFixed(2)},${(day.babyFund || 0).toFixed(2)},${(day.takeHome ?? day.net).toFixed(2)}\n`;
       });
     }
 
@@ -503,7 +516,7 @@ class Dashboard {
       this.state.transactions.forEach(t => {
         const dateStr = new Date(t.timestamp).toLocaleDateString();
         const desc = t.description ? t.description.replace(/"/g, '""') : '';
-        csvContent += `${dateStr},${t.type},"${desc}",${t.amount.toFixed(2)},\n`;
+        csvContent += `${dateStr},${t.type},"${desc}",${t.category || ''},${t.amount.toFixed(2)},${(t.miles || 0).toFixed(1)},${(t.hours || 0).toFixed(2)},,,\n`;
       });
     }
 
@@ -531,47 +544,84 @@ class Dashboard {
       d.setDate(now.getDate() - dayOfWeek + i);
       const key = d.toISOString().split('T')[0];
       if (this.state.weeklyLog[key]) {
-        weekTotal += this.state.weeklyLog[key].net;
+        const day = this.state.weeklyLog[key];
+        weekTotal += day.takeHome ?? day.net;
         daysWithData.add(i);
       }
     }
 
     // Add today's live data
-    let todayGross = 0, todayExp = 0;
-    this.state.transactions.forEach(t => {
-      if (t.type === 'earning') todayGross += t.amount;
-      else todayExp += t.amount;
-    });
-    const todayNet = todayGross - todayExp - this.state.config.dailyBills;
+    const totals = this.getTodayTotals();
     if (this.state.transactions.length > 0) {
-      weekTotal += todayNet;
+      weekTotal += totals.takeHome;
       daysWithData.add(dayOfWeek);
     }
 
     return { weekTotal, daysWithData, dayOfWeek };
   }
 
-  updateDashboard() {
-    let gross = 0, expenses = 0;
+  getTodayTotals() {
+    let gross = 0;
+    let expenses = 0;
+    let miles = 0;
+    let hours = 0;
+
     this.state.transactions.forEach(t => {
-      if (t.type === 'earning') gross += t.amount;
-      else if (t.type === 'expense') expenses += t.amount;
+      if (t.type === 'earning') {
+        gross += Number(t.amount) || 0;
+        miles += Number(t.miles) || 0;
+        hours += Number(t.hours) || 0;
+      } else if (t.type === 'expense') {
+        expenses += Number(t.amount) || 0;
+      }
     });
 
-    const net = gross - expenses - this.state.config.dailyBills;
+    const bills = Number(this.state.config.dailyBills) || 0;
+    const net = gross - expenses - bills;
+    const mileageDeduction = miles * (Number(this.state.config.mileageRate) || 0);
+    const taxable = Math.max(0, gross - expenses - mileageDeduction);
+    const taxReserve = taxable * ((Number(this.state.config.taxRate) || 0) / 100);
+    const takeHome = net - taxReserve;
+    const babyFund = Math.max(0, takeHome) * ((Number(this.state.config.babyFundRate) || 0) / 100);
+    const spendable = takeHome - babyFund;
+    const hourlyRate = hours > 0 ? gross / hours : 0;
+
+    return {
+      gross,
+      expenses,
+      bills,
+      net,
+      taxable,
+      taxReserve,
+      takeHome,
+      babyFund,
+      spendable,
+      miles,
+      hours,
+      mileageDeduction,
+      hourlyRate
+    };
+  }
+
+  updateDashboard() {
+    const totals = this.getTodayTotals();
     const progressPercent = this.state.config.dailyGoal > 0
-      ? Math.max(0, Math.min(100, (net / this.state.config.dailyGoal) * 100))
+      ? Math.max(0, Math.min(100, (totals.takeHome / this.state.config.dailyGoal) * 100))
       : 0;
-    const remaining = Math.max(0, this.state.config.dailyGoal - net);
+    const remaining = Math.max(0, this.state.config.dailyGoal - totals.takeHome);
     const f = new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' });
 
-    this.grossEarnings.textContent = f.format(gross);
-    this.shiftExpenses.textContent = f.format(expenses);
-    this.allocatedBills.textContent = f.format(this.state.config.dailyBills);
-    this.netProfit.textContent = f.format(net);
+    this.grossEarnings.textContent = f.format(totals.gross);
+    this.shiftExpenses.textContent = f.format(totals.expenses);
+    this.allocatedBills.textContent = f.format(totals.bills);
+    this.netProfit.textContent = f.format(totals.takeHome);
     this.remainingToGoal.textContent = f.format(remaining);
     this.dailyGoalDisplay.textContent = f.format(this.state.config.dailyGoal);
     this.dailyProgressText.textContent = `${progressPercent.toFixed(0)}% of Goal`;
+    this.spendableCash.textContent = f.format(totals.spendable);
+    this.taxReserve.textContent = f.format(totals.taxReserve);
+    this.babyFund.textContent = f.format(totals.babyFund);
+    this.mileageDeduction.textContent = f.format(totals.mileageDeduction);
 
     // Dynamic ring color based on progress
     const ring = this.progressRingFill;
@@ -594,19 +644,27 @@ class Dashboard {
     ring.style.strokeDashoffset = offset;
 
     // Smart Insight
-    this.updateSmartInsight(net, remaining, progressPercent, gross);
+    this.updateSmartInsight(totals.takeHome, remaining, progressPercent, totals.gross);
+    this.updateNextMove(totals, remaining);
+    this.renderCareChecklist();
 
     // Weekly
     this.updateWeeklyProgress();
 
     // Hourly Rate
-    this.calculateHourlyRate(gross);
+    this.calculateHourlyRate(totals.gross, totals.hours);
 
     // Render Transactions
     this.renderTransactions();
   }
 
-  calculateHourlyRate(gross) {
+  calculateHourlyRate(gross, loggedHours) {
+    if (loggedHours > 0) {
+      const f = new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' });
+      if (this.hourlyRate) this.hourlyRate.textContent = `${f.format(gross / loggedHours)}/hr`;
+      return;
+    }
+
     if (!this.state.transactions || this.state.transactions.length < 2) {
       if (this.hourlyRate) this.hourlyRate.textContent = '$0.00/hr';
       return;
@@ -621,6 +679,40 @@ class Dashboard {
     const rate = gross / hours;
     const f = new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' });
     if (this.hourlyRate) this.hourlyRate.textContent = `${f.format(rate)}/hr`;
+  }
+
+  updateNextMove(totals, remaining) {
+    const f = new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' });
+    const earningCount = this.state.transactions.filter(t => t.type === 'earning').length;
+
+    if (earningCount === 0) {
+      this.nextMoveText.textContent = 'Log a run with miles and hours to unlock the full plan.';
+      return;
+    }
+
+    const averageRun = totals.gross / earningCount;
+    const runsNeeded = Math.max(0, Math.ceil(remaining / Math.max(averageRun, 1)));
+    const hourlyTarget = Number(this.state.config.hourlyTarget) || 0;
+
+    if (totals.takeHome >= this.state.config.dailyGoal) {
+      this.nextMoveText.textContent = `Goal covered. Park ${f.format(totals.taxReserve)} for tax and ${f.format(totals.babyFund)} for baby fund.`;
+    } else if (totals.hourlyRate > 0 && hourlyTarget > 0 && totals.hourlyRate < hourlyTarget) {
+      this.nextMoveText.textContent = `Hourly pace is ${f.format(totals.hourlyRate)}/hr. Aim for higher-value zones before adding ${runsNeeded} more run${runsNeeded === 1 ? '' : 's'}.`;
+    } else {
+      this.nextMoveText.textContent = `${f.format(remaining)} left to goal. At this pace, plan about ${runsNeeded} more run${runsNeeded === 1 ? '' : 's'}.`;
+    }
+  }
+
+  renderCareChecklist() {
+    let ready = 0;
+    this.careBtns.forEach(btn => {
+      const active = !!this.state.care[btn.dataset.care];
+      if (active) ready++;
+      btn.classList.toggle('active', active);
+    });
+    if (this.careProgress) {
+      this.careProgress.textContent = `${ready}/${this.careBtns.length} ready`;
+    }
   }
 
   updateSmartInsight(net, remaining, percent, gross) {
@@ -677,13 +769,8 @@ class Dashboard {
 
   checkGoalCelebration() {
     if (this.confettiTriggered) return;
-    let gross = 0, expenses = 0;
-    this.state.transactions.forEach(t => {
-      if (t.type === 'earning') gross += t.amount;
-      else expenses += t.amount;
-    });
-    const net = gross - expenses - this.state.config.dailyBills;
-    if (net >= this.state.config.dailyGoal && this.state.config.dailyGoal > 0) {
+    const totals = this.getTodayTotals();
+    if (totals.takeHome >= this.state.config.dailyGoal && this.state.config.dailyGoal > 0) {
       this.confettiTriggered = true;
       this.fireConfetti();
       this.showToast('🎉 GOAL REACHED! You\'re a queen! 👑');
@@ -746,11 +833,11 @@ class Dashboard {
     requestAnimationFrame(animate);
   }
 
-  showToast(message) {
+  showToast(message, isError = false) {
     const existing = document.querySelector('.toast');
     if (existing) existing.remove();
     const toast = document.createElement('div');
-    toast.className = 'toast';
+    toast.className = `toast${isError ? ' error' : ''}`;
     toast.textContent = message;
     document.body.appendChild(toast);
     requestAnimationFrame(() => toast.classList.add('show'));
@@ -795,14 +882,21 @@ class Dashboard {
 
       const timeDiv = document.createElement('div');
       timeDiv.className = 'txn-time';
-      timeDiv.textContent = timeStr;
+      const meta = [timeStr];
+      if (t.type === 'earning') {
+        if (Number(t.miles) > 0) meta.push(`${Number(t.miles).toFixed(1)} mi`);
+        if (Number(t.hours) > 0) meta.push(`${Number(t.hours).toFixed(2)} hr`);
+      } else if (t.category) {
+        meta.push(t.category);
+      }
+      timeDiv.textContent = meta.join(' · ');
 
       infoDiv.appendChild(descDiv);
       infoDiv.appendChild(timeDiv);
 
       const amountDiv = document.createElement('div');
       amountDiv.className = `txn-amount ${t.type}`;
-      amountDiv.textContent = `${symbol} ${f.format(t.amount)}`;
+      amountDiv.textContent = `${symbol} ${f.format(Number(t.amount) || 0)}`;
 
       const deleteBtn = document.createElement('button');
       deleteBtn.className = 'txn-delete';

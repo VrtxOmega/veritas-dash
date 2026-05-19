@@ -19,7 +19,6 @@
       rel="stylesheet"
     />
     <link rel="stylesheet" href="./style.css" />
-    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   </head>
   <body class="dark-theme">
     <!-- Confetti Canvas -->
@@ -53,7 +52,7 @@
               <circle class="ring-fill" id="progressRingFill" cx="100" cy="100" r="85" transform="rotate(-90 100 100)"></circle>
             </svg>
             <div class="ring-content">
-              <span class="ring-label">Net Profit</span>
+              <span class="ring-label">Take Home</span>
               <span class="ring-value" id="netProfit">$0.00</span>
               <span class="ring-sub" id="dailyProgressText">0% of Goal</span>
             </div>
@@ -72,6 +71,48 @@
               <span class="stat-label">Daily Goal</span>
               <span class="stat-value" id="dailyGoalDisplay">$0.00</span>
             </div>
+          </div>
+        </section>
+
+        <!-- Money Plan -->
+        <section class="money-plan glass-panel">
+          <div class="section-header compact">
+            <h2>Today Plan</h2>
+            <span class="section-kicker" id="planStatus">Local only</span>
+          </div>
+          <div class="money-grid">
+            <div class="money-card takehome">
+              <span class="money-label">Spendable</span>
+              <span class="money-value" id="spendableCash">$0.00</span>
+            </div>
+            <div class="money-card reserve">
+              <span class="money-label">Tax Reserve</span>
+              <span class="money-value" id="taxReserve">$0.00</span>
+            </div>
+            <div class="money-card baby">
+              <span class="money-label">Baby Fund</span>
+              <span class="money-value" id="babyFund">$0.00</span>
+            </div>
+            <div class="money-card mileage">
+              <span class="money-label">Mileage Deduction</span>
+              <span class="money-value" id="mileageDeduction">$0.00</span>
+            </div>
+          </div>
+          <div class="next-move" id="nextMoveText">Log your first run to build a plan.</div>
+        </section>
+
+        <!-- Care Check -->
+        <section class="care-section glass-panel">
+          <div class="section-header compact">
+            <h2>Shift Check</h2>
+            <span class="section-kicker" id="careProgress">0/5 ready</span>
+          </div>
+          <div class="care-grid">
+            <button type="button" class="care-chip" data-care="water">Water</button>
+            <button type="button" class="care-chip" data-care="snack">Snack</button>
+            <button type="button" class="care-chip" data-care="charger">Charger</button>
+            <button type="button" class="care-chip" data-care="fuel">Fuel</button>
+            <button type="button" class="care-chip" data-care="break">Break Plan</button>
           </div>
         </section>
 
@@ -225,6 +266,16 @@
             <div class="input-group">
               <input type="text" id="earningDesc" class="modern-input" placeholder="Description (e.g., DoorDash Run)" />
             </div>
+            <div class="entry-grid">
+              <div class="input-group">
+                <label for="earningMiles">Miles</label>
+                <input type="number" id="earningMiles" class="modern-input" step="0.1" min="0" placeholder="0.0" inputmode="decimal" />
+              </div>
+              <div class="input-group">
+                <label for="earningHours">Hours</label>
+                <input type="number" id="earningHours" class="modern-input" step="0.25" min="0" placeholder="0.0" inputmode="decimal" />
+              </div>
+            </div>
             <button type="submit" class="btn primary-btn">
               <span class="btn-text">💰 Add Earning</span>
             </button>
@@ -239,6 +290,17 @@
             </div>
             <div class="input-group">
               <input type="text" id="expenseDesc" class="modern-input" placeholder="Description (e.g., Gas, Snack)" />
+            </div>
+            <div class="input-group">
+              <label for="expenseCategory">Category</label>
+              <select id="expenseCategory" class="modern-input">
+                <option value="Gas">Gas</option>
+                <option value="Maintenance">Maintenance</option>
+                <option value="Meal">Meal</option>
+                <option value="Tolls">Tolls</option>
+                <option value="Family">Family</option>
+                <option value="Other">Other</option>
+              </select>
             </div>
             <button type="submit" class="btn danger-btn">
               <span class="btn-text">⛽ Add Expense</span>
@@ -416,18 +478,35 @@
             </div>
           </div>
 
-          <div class="settings-divider">
-            <span>☁️ Cloud Sync</span>
-          </div>
           <div class="settings-grid">
             <div class="input-group">
-              <label for="syncPin">Cloud Sync PIN (e.g. 1234)</label>
-              <div style="display: flex; gap: 8px;">
-                <input type="text" id="syncPin" class="modern-input" placeholder="Create a PIN" />
-                <button type="button" id="cloudPullBtn" class="btn primary-btn" style="padding: 0 16px; min-width: 80px;">📥 Pull</button>
-              </div>
-              <small style="color: #a0a0a0; font-size: 0.8rem; margin-top: 6px; display: block;">Set a PIN to auto-save to the cloud. Click Pull to download your backup.</small>
+              <label for="setTaxRate">Tax Reserve (%)</label>
+              <input type="number" id="setTaxRate" class="modern-input" step="0.5" min="0" max="60" inputmode="decimal" />
             </div>
+            <div class="input-group">
+              <label for="setBabyFundRate">Baby Fund (%)</label>
+              <input type="number" id="setBabyFundRate" class="modern-input" step="0.5" min="0" max="80" inputmode="decimal" />
+            </div>
+          </div>
+
+          <div class="settings-grid">
+            <div class="input-group">
+              <label for="setMileageRate">Mileage Rate ($/mi)</label>
+              <input type="number" id="setMileageRate" class="modern-input" step="0.01" min="0" inputmode="decimal" />
+            </div>
+            <div class="input-group">
+              <label for="setHourlyTarget">Hourly Target ($)</label>
+              <input type="number" id="setHourlyTarget" class="modern-input" step="0.50" min="0" inputmode="decimal" />
+            </div>
+          </div>
+
+          <div class="settings-divider">
+            <span>Local Backup</span>
+          </div>
+          <div class="backup-panel glass-panel">
+            <button type="button" id="btnBackup" class="btn secondary-btn">Copy Backup Link</button>
+            <textarea id="backupLinkOutput" class="backup-output" readonly placeholder="Backup link appears here after you tap the button."></textarea>
+            <small>Private data stays in this browser. A backup link can restore this device's current plan on another browser.</small>
           </div>
           
           <div class="settings-divider">
