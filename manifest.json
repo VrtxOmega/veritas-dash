@@ -1,12 +1,16 @@
 {
   "name": "Sovereign Dash",
   "short_name": "Sovereign Dash",
+  "id": "/veritas-dash/",
   "description": "Local-first gig-worker earnings, tax reserve, mileage, and family-fund dashboard.",
   "start_url": "/veritas-dash/",
   "scope": "/veritas-dash/",
   "display": "standalone",
+  "display_override": ["standalone", "minimal-ui", "browser"],
+  "orientation": "portrait",
   "background_color": "#0b0d13",
   "theme_color": "#c9a84c",
+  "categories": ["finance", "productivity", "utilities"],
   "icons": [
     {
       "src": "icon-192.png",
@@ -17,6 +21,21 @@
       "src": "icon-512.png",
       "sizes": "512x512",
       "type": "image/png"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "Log Run",
+      "short_name": "Log",
+      "description": "Open Sovereign Dash to the run entry sheet.",
+      "url": "/veritas-dash/?action=add",
+      "icons": [
+        {
+          "src": "icon-192.png",
+          "sizes": "192x192",
+          "type": "image/png"
+        }
+      ]
     }
   ]
 }

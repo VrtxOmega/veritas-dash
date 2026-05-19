@@ -2,6 +2,7 @@ import './style.css'
 
 const STORAGE_KEY = 'sovereign_dash_v4';
 const LEGACY_STORAGE_KEY = 'sovereign_dash_v3';
+const APP_BASE = import.meta.env.BASE_URL || '/';
 
 class Dashboard {
   constructor() {
@@ -9,12 +10,19 @@ class Dashboard {
 
     this.confettiTriggered = false;
     this.notesStatusTimeout = null;
+    this.deferredInstallPrompt = null;
+    this.launchAction = new URLSearchParams(window.location.search).get('action');
+    this.launchActionHandled = false;
     this.loadState();
     this.initDOM();
     this.bindEvents();
     this.updateGreeting();
     this.updateDashboard();
     this.checkUrlForBackup();
+    this.initPwaStatus();
+    this.registerServiceWorker();
+    this.maybeShowOnboarding();
+    this.handleLaunchAction();
   }
 
   createDefaultState() {
@@ -23,6 +31,9 @@ class Dashboard {
       weeklyLog: {},
       notes: '',
       care: { water: false, snack: false, charger: false, fuel: false, break: false },
+      meta: {
+        onboardingComplete: false
+      },
       config: {
         dailyGoal: 150.0,
         weeklyGoal: 1000.0,
@@ -53,6 +64,7 @@ class Dashboard {
       transactions: Array.isArray(saved.transactions) ? saved.transactions : defaults.transactions,
       weeklyLog: saved.weeklyLog || defaults.weeklyLog,
       care: { ...defaults.care, ...(saved.care || {}) },
+      meta: { ...defaults.meta, ...(saved.meta || {}) },
       config
     };
   }
@@ -63,6 +75,9 @@ class Dashboard {
       try {
         const parsed = JSON.parse(saved);
         this.state = this.mergeState(parsed);
+        if (!parsed.meta) {
+          this.state.meta.onboardingComplete = true;
+        }
       } catch (e) {
         console.warn('Saved dashboard state could not be loaded.', e);
       }
@@ -85,6 +100,9 @@ class Dashboard {
         if (parsedState && parsedState.config) {
           if (confirm('A backup was found in the URL. Do you want to restore it? This will replace your current data.')) {
             this.state = this.mergeState(parsedState);
+            if (!parsedState.meta) {
+              this.state.meta.onboardingComplete = true;
+            }
             this.saveState();
             this.initDOM();
             this.bindCareState();
@@ -164,6 +182,9 @@ class Dashboard {
 
   initDOM() {
     this.dateDisplay = document.getElementById('dateDisplay');
+    this.connectionStatus = document.getElementById('connectionStatus');
+    this.installAppBtn = document.getElementById('installAppBtn');
+    this.openOnboardingBtn = document.getElementById('openOnboardingBtn');
     this.progressRingFill = document.getElementById('progressRingFill');
     this.netProfit = document.getElementById('netProfit');
     this.dailyProgressText = document.getElementById('dailyProgressText');
@@ -183,6 +204,7 @@ class Dashboard {
     this.transactionList = document.getElementById('transactionList');
     this.fabBtn = document.getElementById('fabBtn');
     this.actionModal = document.getElementById('actionModal');
+    this.onboardingModal = document.getElementById('onboardingModal');
     this.settingsModal = document.getElementById('settingsModal');
     this.calculatorModal = document.getElementById('calculatorModal');
     this.historyModal = document.getElementById('historyModal');
@@ -212,6 +234,9 @@ class Dashboard {
     this.weekMileageTotal = document.getElementById('weekMileageTotal');
     this.weekHoursTotal = document.getElementById('weekHoursTotal');
     this.weekCommandText = document.getElementById('weekCommandText');
+    this.coachPaceLine = document.getElementById('coachPaceLine');
+    this.coachRunLine = document.getElementById('coachRunLine');
+    this.coachReserveLine = document.getElementById('coachReserveLine');
     this.monthGross = document.getElementById('monthGross');
     this.monthTaxReserve = document.getElementById('monthTaxReserve');
     this.yearMiles = document.getElementById('yearMiles');
@@ -222,12 +247,18 @@ class Dashboard {
     this.greetingHeadline = document.getElementById('greetingHeadline');
     this.greetingSub = document.getElementById('greetingSub');
     this.dailyNotes = document.getElementById('dailyNotes');
+    this.onboardingForm = document.getElementById('onboardingForm');
+    this.skipOnboardingBtn = document.getElementById('skipOnboardingBtn');
 
     if (this.dailyNotes) {
       this.dailyNotes.value = this.state.notes || '';
     }
 
-    // Populate Settings
+    this.populateSettingsInputs();
+    this.populateOnboardingInputs();
+  }
+
+  populateSettingsInputs() {
     document.getElementById('setDailyGoal').value = this.state.config.dailyGoal;
     document.getElementById('setWeeklyGoal').value = this.state.config.weeklyGoal;
     document.getElementById('setTaxRate').value = this.state.config.taxRate;
@@ -240,6 +271,18 @@ class Dashboard {
     document.getElementById('setInsurance').value = mb.insurance || '';
     document.getElementById('setUtilities').value = mb.utilities || '';
     this.updateComputedBillsDisplay();
+  }
+
+  populateOnboardingInputs() {
+    if (!this.onboardingForm) return;
+    const mb = this.state.config.monthlyBills || {};
+    const monthlyTotal = Object.values(mb).reduce((sum, value) => sum + (Number(value) || 0), 0);
+    document.getElementById('onboardDailyGoal').value = this.state.config.dailyGoal;
+    document.getElementById('onboardWeeklyGoal').value = this.state.config.weeklyGoal;
+    document.getElementById('onboardTaxRate').value = this.state.config.taxRate;
+    document.getElementById('onboardBabyFundRate').value = this.state.config.babyFundRate;
+    document.getElementById('onboardMonthlyBills').value = monthlyTotal || '';
+    document.getElementById('onboardMileageRate').value = this.state.config.mileageRate;
   }
 
   updateComputedBillsDisplay() {
@@ -337,6 +380,13 @@ class Dashboard {
     const options = { weekday: 'long', month: 'long', day: 'numeric' };
     this.dateDisplay.textContent = new Date().toLocaleDateString(undefined, options);
 
+    if (this.openOnboardingBtn) {
+      this.openOnboardingBtn.addEventListener('click', () => this.openOnboarding());
+    }
+    if (this.installAppBtn) {
+      this.installAppBtn.addEventListener('click', () => this.promptInstall());
+    }
+
     this.fabBtn.addEventListener('click', () => this.openModal(this.actionModal));
     this.openSettingsBtn.addEventListener('click', () => this.openModal(this.settingsModal));
     if (this.openHistoryBtn) {
@@ -362,6 +412,22 @@ class Dashboard {
 
     if (this.btnBackup) {
       this.btnBackup.addEventListener('click', () => this.generateBackupLink());
+    }
+
+    if (this.onboardingForm) {
+      this.onboardingForm.addEventListener('submit', (e) => {
+        e.preventDefault();
+        this.saveOnboarding();
+      });
+    }
+    if (this.skipOnboardingBtn) {
+      this.skipOnboardingBtn.addEventListener('click', () => {
+        this.state.meta.onboardingComplete = true;
+        this.saveState();
+        this.closeAllModals();
+        this.handleLaunchAction();
+        this.showToast('Setup saved for later.');
+      });
     }
 
     this.careBtns.forEach(btn => {
@@ -481,6 +547,110 @@ class Dashboard {
     });
   }
 
+  initPwaStatus() {
+    const updateStatus = () => {
+      if (!this.connectionStatus) return;
+      const standalone = window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone;
+      if (!navigator.onLine) {
+        this.connectionStatus.textContent = 'Offline';
+        this.connectionStatus.classList.add('offline');
+      } else if (standalone) {
+        this.connectionStatus.textContent = 'Installed';
+        this.connectionStatus.classList.remove('offline');
+      } else {
+        this.connectionStatus.textContent = 'Local';
+        this.connectionStatus.classList.remove('offline');
+      }
+    };
+
+    updateStatus();
+    window.addEventListener('online', updateStatus);
+    window.addEventListener('offline', updateStatus);
+    window.addEventListener('beforeinstallprompt', (event) => {
+      event.preventDefault();
+      this.deferredInstallPrompt = event;
+      if (this.installAppBtn) {
+        this.installAppBtn.hidden = false;
+      }
+    });
+    window.addEventListener('appinstalled', () => {
+      this.deferredInstallPrompt = null;
+      if (this.installAppBtn) {
+        this.installAppBtn.hidden = true;
+      }
+      updateStatus();
+      this.showToast('Sovereign Dash installed.');
+    });
+  }
+
+  promptInstall() {
+    if (!this.deferredInstallPrompt) {
+      this.showToast('Install from your browser menu if the button is not available yet.');
+      return;
+    }
+
+    this.deferredInstallPrompt.prompt();
+    this.deferredInstallPrompt.userChoice.then((choice) => {
+      if (choice.outcome === 'accepted' && this.installAppBtn) {
+        this.installAppBtn.hidden = true;
+      }
+      this.deferredInstallPrompt = null;
+    });
+  }
+
+  registerServiceWorker() {
+    if (!('serviceWorker' in navigator) || window.location.protocol === 'file:') return;
+    window.addEventListener('load', () => {
+      navigator.serviceWorker.register(`${APP_BASE}sw.js`).catch(() => {});
+    });
+  }
+
+  maybeShowOnboarding() {
+    if (this.state.meta.onboardingComplete) return;
+    window.setTimeout(() => this.openOnboarding(), 250);
+  }
+
+  openOnboarding() {
+    if (!this.onboardingModal) return;
+    this.populateOnboardingInputs();
+    this.openModal(this.onboardingModal);
+  }
+
+  saveOnboarding() {
+    const dailyGoal = parseFloat(document.getElementById('onboardDailyGoal').value) || 0;
+    const weeklyGoal = parseFloat(document.getElementById('onboardWeeklyGoal').value) || 0;
+    const taxRate = parseFloat(document.getElementById('onboardTaxRate').value) || 0;
+    const babyFundRate = parseFloat(document.getElementById('onboardBabyFundRate').value) || 0;
+    const monthlyBills = parseFloat(document.getElementById('onboardMonthlyBills').value) || 0;
+    const mileageRate = parseFloat(document.getElementById('onboardMileageRate').value) || 0;
+
+    this.state.config.dailyGoal = dailyGoal;
+    this.state.config.weeklyGoal = weeklyGoal;
+    this.state.config.taxRate = taxRate;
+    this.state.config.babyFundRate = babyFundRate;
+    this.state.config.mileageRate = mileageRate;
+    this.state.config.monthlyBills = { rent: monthlyBills, car: 0, insurance: 0, utilities: 0 };
+    this.state.config.dailyBills = monthlyBills / 30;
+    this.state.meta.onboardingComplete = true;
+
+    this.populateSettingsInputs();
+    this.saveState();
+    this.closeAllModals();
+    this.handleLaunchAction();
+    this.showToast('Plan saved. Go earn it.');
+  }
+
+  handleLaunchAction() {
+    if (!this.launchAction || this.launchActionHandled || !this.state.meta.onboardingComplete) return;
+    this.launchActionHandled = true;
+    const cleanUrl = window.location.origin + window.location.pathname;
+    window.history.replaceState({}, document.title, cleanUrl);
+
+    if (this.launchAction === 'add') {
+      window.setTimeout(() => this.openModal(this.actionModal), 250);
+    }
+  }
+
   updateGreeting() {
     const hour = new Date().getHours();
     let emoji, headline, sub;
@@ -515,6 +685,7 @@ class Dashboard {
   closeAllModals() {
     this.overlay.classList.remove('active');
     this.actionModal.classList.remove('active');
+    if (this.onboardingModal) this.onboardingModal.classList.remove('active');
     this.settingsModal.classList.remove('active');
     if (this.calculatorModal) this.calculatorModal.classList.remove('active');
     if (this.historyModal) this.historyModal.classList.remove('active');
@@ -852,27 +1023,33 @@ class Dashboard {
       return;
     }
 
-    const averageRun = totals.gross / earningCount;
-    const runsNeeded = Math.max(0, Math.ceil(remaining / Math.max(averageRun, 1)));
+    const averageTakeHomeRun = totals.takeHome / earningCount;
+    const runsNeeded = Math.max(0, Math.ceil(remaining / Math.max(averageTakeHomeRun, 1)));
     const hourlyTarget = Number(this.state.config.hourlyTarget) || 0;
 
     if (totals.takeHome >= this.state.config.dailyGoal) {
-      this.nextMoveText.textContent = `Goal covered. Park ${f.format(totals.taxReserve)} for tax and ${f.format(totals.babyFund)} for baby fund.`;
+      this.nextMoveText.textContent = `Goal covered. Protect ${f.format(totals.taxReserve)} for tax and ${f.format(totals.babyFund)} for baby fund.`;
     } else if (totals.hourlyRate > 0 && hourlyTarget > 0 && totals.hourlyRate < hourlyTarget) {
       this.nextMoveText.textContent = `Hourly pace is ${f.format(totals.hourlyRate)}/hr. Aim for higher-value zones before adding ${runsNeeded} more run${runsNeeded === 1 ? '' : 's'}.`;
     } else {
-      this.nextMoveText.textContent = `${f.format(remaining)} left to goal. At this pace, plan about ${runsNeeded} more run${runsNeeded === 1 ? '' : 's'}.`;
+      this.nextMoveText.textContent = `${f.format(remaining)} left to goal. At current take-home pace, plan about ${runsNeeded} more run${runsNeeded === 1 ? '' : 's'}.`;
     }
   }
 
   updateWeekCommand() {
     const week = this.getPeriodSummary('week');
     const f = new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' });
+    const todayIndex = new Date().getDay();
+    const daysElapsed = todayIndex + 1;
+    const daysRemaining = Math.max(1, 7 - todayIndex);
     const remaining = Math.max(0, this.state.config.weeklyGoal - week.takeHome);
-    const avgRun = week.runCount > 0 ? week.gross / week.runCount : 0;
+    const avgRun = week.runCount > 0 ? week.takeHome / week.runCount : 0;
     const runsLeft = remaining > 0 && avgRun > 0 ? Math.ceil(remaining / avgRun) : 0;
     const reserveTotal = week.taxReserve + week.babyFund;
     const weekPercent = this.state.config.weeklyGoal > 0 ? (week.takeHome / this.state.config.weeklyGoal) * 100 : 0;
+    const expectedPace = this.state.config.weeklyGoal > 0 ? this.state.config.weeklyGoal * (daysElapsed / 7) : 0;
+    const paceDelta = week.takeHome - expectedPace;
+    const dailyNeed = remaining / daysRemaining;
 
     this.weekTakeHome.textContent = f.format(week.takeHome);
     this.weekRemaining.textContent = f.format(remaining);
@@ -884,12 +1061,26 @@ class Dashboard {
     if (weekPercent >= 100) {
       this.weekPaceStatus.textContent = 'Covered';
       this.weekCommandText.textContent = `Weekly goal covered. Reserve ${f.format(reserveTotal)} and keep the next run optional.`;
+      this.coachPaceLine.textContent = `${f.format(Math.max(0, paceDelta))} ahead`;
+      this.coachRunLine.textContent = 'Only take runs that are worth it';
+      this.coachReserveLine.textContent = `${f.format(reserveTotal)} protected`;
     } else if (week.runCount === 0) {
       this.weekPaceStatus.textContent = 'Plan';
       this.weekCommandText.textContent = 'Build the week from today\'s first run.';
+      this.coachPaceLine.textContent = `${f.format(this.state.config.weeklyGoal)} target`;
+      this.coachRunLine.textContent = `Aim for ${f.format(dailyNeed)} today`;
+      this.coachReserveLine.textContent = `${this.state.config.taxRate}% tax / ${this.state.config.babyFundRate}% baby`;
     } else {
-      this.weekPaceStatus.textContent = `${Math.max(0, Math.round(weekPercent))}%`;
-      this.weekCommandText.textContent = `${f.format(remaining)} left this week. At ${f.format(avgRun)} average gross/run, plan about ${runsLeft} more run${runsLeft === 1 ? '' : 's'}.`;
+      const paceLabel = Math.abs(paceDelta) < 25 ? 'On Pace' : paceDelta >= 0 ? 'Ahead' : 'Behind';
+      this.weekPaceStatus.textContent = paceLabel;
+      this.weekCommandText.textContent = `${f.format(remaining)} left this week. Need about ${f.format(dailyNeed)} take-home per remaining day.`;
+      this.coachPaceLine.textContent = paceDelta >= 0
+        ? `${f.format(paceDelta)} ahead of pace`
+        : `${f.format(Math.abs(paceDelta))} behind pace`;
+      this.coachRunLine.textContent = avgRun > 0
+        ? `${runsLeft} run${runsLeft === 1 ? '' : 's'} left at ${f.format(avgRun)} avg take-home`
+        : `Aim for ${f.format(dailyNeed)} today`;
+      this.coachReserveLine.textContent = `${f.format(reserveTotal)} protected`;
     }
   }
 

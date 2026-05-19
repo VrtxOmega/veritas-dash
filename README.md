@@ -16,7 +16,7 @@
 
 ---
 
-Veritas Dash is a sovereign, browser-native financial dashboard built for gig-workers. It tracks daily earnings, expenses, miles, hours, bill allocation, tax reserve, baby-fund savings, and take-home pace with a VERITAS gold-and-obsidian interface. All data is stored locally — no server, no tracking, no accounts. Installable as a Progressive Web App (PWA) for standalone mobile experience.
+Veritas Dash is a sovereign, browser-native financial dashboard built for gig-workers. It tracks daily earnings, expenses, miles, hours, bill allocation, tax reserve, baby-fund savings, and take-home pace with a VERITAS gold-and-obsidian interface. All data is stored locally — no server, no tracking, no accounts. Installable as a Progressive Web App (PWA) with first-run setup, offline shell caching, and mobile shortcut support.
 
 ---
 
@@ -35,7 +35,9 @@ Veritas Dash is a static PWA that runs entirely in the browser and stores data i
 - Expense tracking (gas, maintenance, meals, tolls, family, other)
 - Take-home calculation with bills, tax reserve, mileage deduction, and baby-fund planning
 - Miles/hours tracking for better hourly and deduction visibility
+- First-run quick setup for daily target, weekly target, tax reserve, baby-fund rate, fixed bills, and mileage rate
 - Weekly command view for take-home pace, remaining goal, runs left, reserves, miles, and hours
+- Weekly coach prompts for pace, next run target, and reserve protection
 - Month and year-to-date export snapshot for tax-prep visibility
 - Local backup links for moving private data between browsers without a backend
 - A non-medical shift readiness checklist for water, snack, charger, fuel, and break plan
@@ -53,11 +55,13 @@ Veritas Dash is a static PWA that runs entirely in the browser and stores data i
 | Expense Categorization | Choose gas, maintenance, meals, tolls, family, or other |
 | Tax + Baby Fund Planner | Calculates reserve and savings buckets from configured percentages |
 | Mileage + Hours | Tracks miles, mileage deduction estimate, and hourly pace |
+| First-Run Setup | Opens a quick local setup sheet for the numbers that drive the dashboard |
 | Week Command | Shows weekly take-home, remaining goal, estimated runs left, reserve total, miles, and hours |
+| Weekly Coach | Turns weekly pace into concrete daily and run-count guidance |
 | Export Snapshot | Surfaces month and year-to-date totals used in the CSV report |
 | Local Backup Link | Generates a private restore link for browser-to-browser migration |
 | Smart Insights | Contextual analysis: "You're 73% to goal — $41.50 to go" |
-| PWA Installable | `manifest.json` + icons for standalone mobile app experience |
+| PWA Installable | `manifest.json`, icons, install prompt, shortcut, and service worker shell cache |
 | Offline-First | All data persists in `localStorage`; no account or backend required |
 | Weekly/Monthly Rollups | Aggregated views with trend detection |
 | Dark Mode (Default) | VERITAS obsidian-and-gold aesthetic; no light mode toggle required |
@@ -132,8 +136,10 @@ npx serve .
 | PWA installability | Complete |
 | Expense categorization engine | Complete |
 | Weekly/monthly analytics | Complete |
+| First-run setup + weekly coach | Complete |
+| PWA install/offline shell | Complete |
 | Multi-currency support | Planned |
-| Tax export (1099) | Planned |
+| Deeper tax export presets | Planned |
 | ShiftForge integration (scheduling + earnings) | Planned |
 | Optional encrypted sync | Planned |
 

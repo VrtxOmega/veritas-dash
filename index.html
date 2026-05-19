@@ -3,10 +3,11 @@
   <head>
     <meta charset="UTF-8" />
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
     <meta name="theme-color" content="#c9a84c" />
     <meta name="description" content="Sovereign Dash — Premium gig-worker financial dashboard. Track DoorDash earnings, expenses, and hit your daily goals." />
     <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
     <meta name="apple-mobile-web-app-title" content="Sovereign Dash" />
     <link rel="apple-touch-icon" href="/icon-192.png" />
@@ -33,6 +34,11 @@
         </div>
         <div class="date-display" id="dateDisplay"></div>
       </header>
+      <div class="status-rail">
+        <button type="button" class="status-chip setup-chip" id="openOnboardingBtn">Setup</button>
+        <span class="status-chip" id="connectionStatus">Local</span>
+        <button type="button" class="status-chip install-chip" id="installAppBtn" hidden>Install</button>
+      </div>
 
       <main class="dashboard-content">
         <!-- Motivational Greeting -->
@@ -165,6 +171,20 @@
             <span id="weekHoursTotal">0.00 hr</span>
           </div>
           <div class="next-move" id="weekCommandText">Build the week from today's first run.</div>
+          <div class="coach-list" aria-label="Weekly coach">
+            <div class="coach-line">
+              <span class="coach-label">Pace</span>
+              <span class="coach-value" id="coachPaceLine">Set weekly target</span>
+            </div>
+            <div class="coach-line">
+              <span class="coach-label">Next</span>
+              <span class="coach-value" id="coachRunLine">Log one run</span>
+            </div>
+            <div class="coach-line">
+              <span class="coach-label">Protect</span>
+              <span class="coach-value" id="coachReserveLine">$0.00 reserved</span>
+            </div>
+          </div>
         </section>
 
         <!-- Tax Snapshot -->
@@ -300,6 +320,55 @@
         <div class="history-list" id="historyList">
           <!-- Populated by JS -->
         </div>
+      </div>
+
+      <!-- Onboarding Modal (Bottom Sheet) -->
+      <div class="bottom-sheet glass-panel onboarding-sheet" id="onboardingModal" role="dialog" aria-modal="true" aria-labelledby="onboardingTitle">
+        <div class="sheet-handle"></div>
+        <div class="onboarding-head">
+          <span class="onboarding-mark">Ω</span>
+          <div>
+            <h2 id="onboardingTitle">Quick Setup</h2>
+            <p>Set the numbers once. Everything stays on this device.</p>
+          </div>
+        </div>
+        <form id="onboardingForm" class="input-form">
+          <div class="onboarding-grid">
+            <div class="input-group">
+              <label for="onboardDailyGoal">Daily Take-Home Goal</label>
+              <input type="number" id="onboardDailyGoal" class="modern-input" step="0.01" min="0" inputmode="decimal" required />
+            </div>
+            <div class="input-group">
+              <label for="onboardWeeklyGoal">Weekly Take-Home Goal</label>
+              <input type="number" id="onboardWeeklyGoal" class="modern-input" step="0.01" min="0" inputmode="decimal" required />
+            </div>
+            <div class="input-group">
+              <label for="onboardTaxRate">Tax Reserve</label>
+              <input type="number" id="onboardTaxRate" class="modern-input" step="0.5" min="0" max="60" inputmode="decimal" />
+            </div>
+            <div class="input-group">
+              <label for="onboardBabyFundRate">Baby Fund</label>
+              <input type="number" id="onboardBabyFundRate" class="modern-input" step="0.5" min="0" max="80" inputmode="decimal" />
+            </div>
+            <div class="input-group">
+              <label for="onboardMonthlyBills">Monthly Fixed Bills</label>
+              <input type="number" id="onboardMonthlyBills" class="modern-input" step="0.01" min="0" inputmode="decimal" />
+            </div>
+            <div class="input-group">
+              <label for="onboardMileageRate">Mileage Rate</label>
+              <input type="number" id="onboardMileageRate" class="modern-input" step="0.01" min="0" inputmode="decimal" />
+            </div>
+          </div>
+          <div class="trust-note">
+            <span>Local</span>
+            <span>No account</span>
+            <span>Backup by link</span>
+          </div>
+          <button type="submit" class="btn primary-btn">
+            <span class="btn-text">Save Plan</span>
+          </button>
+          <button type="button" class="btn secondary-btn" id="skipOnboardingBtn">Skip For Now</button>
+        </form>
       </div>
 
       <!-- Action Modal (Bottom Sheet) -->
