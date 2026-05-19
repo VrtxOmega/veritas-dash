@@ -39,6 +39,7 @@ Veritas Dash is a static PWA that runs entirely in the browser and stores data i
 - Offer Guard for checking payout, miles, minutes, hourly pace, and per-mile value before accepting a run
 - Local run timer for capturing shift duration and prefilling earning-entry hours
 - Bill Shield for due-date visibility, paid/unpaid flags, and next-14-day safe-spend guidance
+- Shift Closeout for end-of-shift stop/continue guidance across money, bills, baby fund, miles, hours, and readiness
 - Weekly command view for take-home pace, remaining goal, runs left, reserves, miles, and hours
 - Weekly coach prompts for pace, next run target, and reserve protection
 - Baby Runway for due-date countdown, saved-so-far, remaining target, and weekly savings pace
@@ -62,6 +63,7 @@ Veritas Dash is a static PWA that runs entirely in the browser and stores data i
 | Offer Guard | Evaluates a proposed run before accepting and can prefill the earnings form |
 | Run Timer | Tracks local elapsed shift time and prefills earning-entry hours on demand |
 | Bill Shield | Shows upcoming fixed bills, due days, paid status, and safe spend after 14-day protection |
+| Shift Closeout | Summarizes whether today is safe to stop and can trigger the existing archive flow |
 | First-Run Setup | Opens a quick local setup sheet for the numbers that drive the dashboard |
 | Week Command | Shows weekly take-home, remaining goal, estimated runs left, reserve total, miles, and hours |
 | Weekly Coach | Turns weekly pace into concrete daily and run-count guidance |
@@ -156,6 +158,7 @@ npx serve .
 | Run Timer with hours prefill | Complete |
 | Bill Shield due-date protection | Complete |
 | Offer Guard accept/skip calculator | Complete |
+| Shift Closeout stop/continue review | Complete |
 | Multi-currency support | Planned |
 | Deeper tax export presets | Planned |
 | ShiftForge integration (scheduling + earnings) | Planned |

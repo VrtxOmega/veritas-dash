@@ -196,6 +196,35 @@
           <div class="next-move" id="billShieldText">Add monthly bills and due days in Settings.</div>
         </section>
 
+        <!-- Shift Closeout -->
+        <section class="shift-closeout glass-panel">
+          <div class="section-header compact">
+            <h2>Shift Closeout</h2>
+            <span class="section-kicker" id="closeoutStatus">Not Ready</span>
+          </div>
+          <div class="closeout-grid">
+            <div class="closeout-cell takehome">
+              <span class="closeout-label">Take Home</span>
+              <span class="closeout-value" id="closeoutTakeHome">$0.00</span>
+            </div>
+            <div class="closeout-cell safe">
+              <span class="closeout-label">Safe Spend</span>
+              <span class="closeout-value" id="closeoutSafeSpend">$0.00</span>
+            </div>
+            <div class="closeout-cell reserve">
+              <span class="closeout-label">Reserve</span>
+              <span class="closeout-value" id="closeoutReserve">$0.00</span>
+            </div>
+            <div class="closeout-cell miles">
+              <span class="closeout-label">Time / Miles</span>
+              <span class="closeout-value" id="closeoutHoursMiles">0.00h · 0.0mi</span>
+            </div>
+          </div>
+          <div class="closeout-checks" id="closeoutChecks"></div>
+          <button type="button" class="timer-btn primary closeout-btn" id="btnCloseoutArchive" disabled>Close Day</button>
+          <div class="next-move" id="closeoutText">Log a run before closing out.</div>
+        </section>
+
         <!-- Baby Runway -->
         <section class="baby-runway glass-panel">
           <div class="section-header compact">

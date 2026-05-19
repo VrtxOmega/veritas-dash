@@ -380,6 +380,14 @@ class Dashboard {
     this.billShieldPaid = document.getElementById('billShieldPaid');
     this.billShieldList = document.getElementById('billShieldList');
     this.billShieldText = document.getElementById('billShieldText');
+    this.closeoutStatus = document.getElementById('closeoutStatus');
+    this.closeoutTakeHome = document.getElementById('closeoutTakeHome');
+    this.closeoutSafeSpend = document.getElementById('closeoutSafeSpend');
+    this.closeoutReserve = document.getElementById('closeoutReserve');
+    this.closeoutHoursMiles = document.getElementById('closeoutHoursMiles');
+    this.closeoutChecks = document.getElementById('closeoutChecks');
+    this.closeoutText = document.getElementById('closeoutText');
+    this.btnCloseoutArchive = document.getElementById('btnCloseoutArchive');
     this.careProgress = document.getElementById('careProgress');
     this.careBtns = document.querySelectorAll('.care-chip');
     this.grossEarnings = document.getElementById('grossEarnings');
@@ -693,6 +701,110 @@ class Dashboard {
       weekBabyFund: this.getPeriodSummary('week').babyFund,
       note: (plan.note || '').trim()
     };
+  }
+
+  getCareSummary() {
+    const keys = Object.keys(this.createDefaultState().care);
+    const ready = keys.filter(key => !!this.state.care[key]).length;
+    return { ready, total: keys.length };
+  }
+
+  getShiftCloseout() {
+    const totals = this.getTodayTotals();
+    const shield = this.getBillShield();
+    const runway = this.getBabyRunway();
+    const care = this.getCareSummary();
+    const dailyGoal = Math.max(0, Number(this.state.config.dailyGoal) || 0);
+    const remaining = Math.max(0, dailyGoal - totals.takeHome);
+    const goalPercent = dailyGoal > 0 ? Math.max(0, Math.min(100, (totals.takeHome / dailyGoal) * 100)) : 0;
+    const hasRun = totals.runCount > 0;
+    const goalOk = dailyGoal > 0 ? totals.takeHome >= dailyGoal : hasRun;
+    const billsOk = shield.needs <= 0;
+    const babyGap = Math.max(0, runway.weeklyNeed - runway.weekBabyFund);
+    const babyOk = !runway.target || runway.remaining <= 0 || runway.weeklyNeed <= 0 || babyGap <= 0;
+    const careOk = care.ready >= Math.min(3, care.total);
+    const reserveTotal = totals.taxReserve + totals.babyFund;
+    let status = 'Not Ready';
+    let text = 'Log a run before closing out.';
+
+    if (!hasRun) {
+      status = 'Log Run';
+    } else if (!billsOk) {
+      status = 'Protect Bills';
+      text = `${this.formatMoney(shield.needs)} more needed before upcoming bills are protected.`;
+    } else if (!goalOk) {
+      status = 'Keep Going';
+      text = `${this.formatMoney(remaining)} left to goal. Stop only if the family plan is covered.`;
+    } else if (!careOk) {
+      status = 'Check In';
+      text = 'Money is covered. Finish water, snack, charger, fuel, or break-plan checks before stopping.';
+    } else {
+      status = 'Safe Stop';
+      text = `${this.formatMoney(totals.takeHome)} take-home logged. Close the day when notes are saved.`;
+    }
+
+    return {
+      totals,
+      shield,
+      runway,
+      care,
+      remaining,
+      goalPercent,
+      reserveTotal,
+      safeSpend: shield.safeSpend,
+      hasRun,
+      status,
+      text,
+      checks: [
+        {
+          name: 'Goal',
+          ok: goalOk,
+          text: goalOk ? 'Daily goal covered' : `${this.formatMoney(remaining)} left`,
+          badge: `${goalPercent.toFixed(0)}%`
+        },
+        {
+          name: 'Bills',
+          ok: billsOk,
+          text: billsOk ? 'Upcoming bills protected' : `${this.formatMoney(shield.needs)} needed`,
+          badge: shield.currentTotal ? `${shield.currentPaid}/${shield.currentTotal}` : 'Set'
+        },
+        {
+          name: 'Baby',
+          ok: babyOk,
+          text: babyOk ? 'Baby pace protected' : `${this.formatMoney(babyGap)} pace gap`,
+          badge: this.formatMoney(totals.babyFund)
+        },
+        {
+          name: 'Care',
+          ok: careOk,
+          text: careOk ? 'Shift body check ready' : 'Finish the body check',
+          badge: `${care.ready}/${care.total}`
+        }
+      ]
+    };
+  }
+
+  updateShiftCloseout() {
+    if (!this.closeoutStatus) return;
+    const closeout = this.getShiftCloseout();
+
+    this.closeoutStatus.textContent = closeout.status;
+    this.closeoutTakeHome.textContent = this.formatMoney(closeout.totals.takeHome);
+    this.closeoutSafeSpend.textContent = this.formatMoney(closeout.safeSpend);
+    this.closeoutReserve.textContent = this.formatMoney(closeout.reserveTotal);
+    this.closeoutHoursMiles.textContent = `${closeout.totals.hours.toFixed(2)}h · ${closeout.totals.miles.toFixed(1)}mi`;
+    this.closeoutText.textContent = closeout.text;
+    if (this.btnCloseoutArchive) this.btnCloseoutArchive.disabled = !closeout.hasRun;
+
+    if (this.closeoutChecks) {
+      this.closeoutChecks.innerHTML = closeout.checks.map(check => `
+        <div class="closeout-check ${check.ok ? 'ok' : 'warn'}">
+          <span class="closeout-check-name">${check.name}</span>
+          <span class="closeout-check-text">${check.text}</span>
+          <span class="closeout-check-badge">${check.badge}</span>
+        </div>
+      `).join('');
+    }
   }
 
   getOfferGuardMetrics() {
@@ -1178,6 +1290,13 @@ class Dashboard {
     if (this.btnClearOffer) {
       this.btnClearOffer.addEventListener('click', () => this.clearOfferGuard());
     }
+    if (this.btnCloseoutArchive) {
+      this.btnCloseoutArchive.addEventListener('click', () => {
+        if (confirm('Close out today and archive entries?')) {
+          this.archiveToday();
+        }
+      });
+    }
 
     if (this.onboardingForm) {
       this.onboardingForm.addEventListener('submit', (e) => {
@@ -1567,6 +1686,7 @@ class Dashboard {
     const runway = this.getBabyRunway();
     const shield = this.getBillShield();
     const offer = this.getOfferGuardMetrics();
+    const closeout = this.getShiftCloseout();
     const summaryHeaders = ['Period', 'Gross', 'Expenses', 'Bills', 'Tax Reserve', 'Baby Fund', 'Take Home', 'Miles', 'Mileage Deduction', 'Hours', 'Runs'];
     const summaryRow = (label, data) => [
       label,
@@ -1590,6 +1710,19 @@ class Dashboard {
     rows.push(summaryRow('This Week', week));
     rows.push(summaryRow('This Month', month));
     rows.push(summaryRow('Year To Date', year));
+    rows.push([]);
+    rows.push(['Shift Closeout']);
+    rows.push(['Status', closeout.status]);
+    rows.push(['Take Home', closeout.totals.takeHome.toFixed(2)]);
+    rows.push(['Safe Spend', closeout.safeSpend.toFixed(2)]);
+    rows.push(['Reserve', closeout.reserveTotal.toFixed(2)]);
+    rows.push(['Hours', closeout.totals.hours.toFixed(2)]);
+    rows.push(['Miles', closeout.totals.miles.toFixed(1)]);
+    rows.push(['Closeout Note', closeout.text]);
+    rows.push(['Check', 'Status', 'Detail', 'Badge']);
+    closeout.checks.forEach(check => {
+      rows.push([check.name, check.ok ? 'OK' : 'Needs Work', check.text, check.badge]);
+    });
     rows.push([]);
     rows.push(['Baby Runway']);
     rows.push(['Due Date', runway.dueDateText]);
@@ -1808,6 +1941,7 @@ class Dashboard {
     this.updateWeekCommand();
     this.updateTaxSnapshot();
     this.updateBabyRunway();
+    this.updateShiftCloseout();
     this.updateVaultStatus();
 
     // Hourly Rate
@@ -1987,14 +2121,13 @@ class Dashboard {
   }
 
   renderCareChecklist() {
-    let ready = 0;
     this.careBtns.forEach(btn => {
       const active = !!this.state.care[btn.dataset.care];
-      if (active) ready++;
       btn.classList.toggle('active', active);
     });
     if (this.careProgress) {
-      this.careProgress.textContent = `${ready}/${this.careBtns.length} ready`;
+      const care = this.getCareSummary();
+      this.careProgress.textContent = `${care.ready}/${care.total} ready`;
     }
   }
 

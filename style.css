@@ -314,6 +314,54 @@ button.status-chip:hover, button.status-chip:active { border-color: var(--vrts-g
   font-size: 0.82rem; line-height: 1.4;
 }
 
+/* Shift Closeout */
+.shift-closeout { padding: 1.25rem; }
+.closeout-grid {
+  display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0.6rem;
+}
+.closeout-cell {
+  min-height: 82px; padding: 0.8rem; border-radius: 14px;
+  background: rgba(255,255,255,0.04); border: 1px solid var(--vrts-border);
+}
+.closeout-cell.takehome { border-color: hsla(150, 70%, 45%, 0.3); }
+.closeout-cell.safe { border-color: hsla(44, 70%, 56%, 0.3); }
+.closeout-cell.reserve { border-color: hsla(210, 82%, 68%, 0.28); }
+.closeout-cell.miles { border-color: hsla(330, 86%, 74%, 0.26); }
+.closeout-label {
+  display: block; color: var(--vrts-text-muted); font-size: 0.68rem;
+  text-transform: uppercase; letter-spacing: 0.04em; font-weight: 800; margin-bottom: 0.35rem;
+}
+.closeout-value {
+  display: block; font-family: var(--font-display); font-weight: 800;
+  font-size: clamp(0.9rem, 5.6vw, 1.22rem); color: var(--vrts-text);
+  overflow-wrap: anywhere;
+}
+.closeout-cell.takehome .closeout-value { color: var(--color-positive); }
+.closeout-cell.safe .closeout-value { color: var(--vrts-gold); }
+.closeout-checks {
+  display: grid; gap: 0.5rem; margin-top: 0.75rem;
+}
+.closeout-check {
+  display: grid; grid-template-columns: 78px 1fr auto; gap: 0.55rem; align-items: center;
+  min-height: 42px; padding: 0.65rem 0.72rem; border-radius: 12px;
+  background: rgba(0,0,0,0.16); border: 1px solid rgba(255,255,255,0.07);
+}
+.closeout-check.ok { border-color: hsla(150, 70%, 45%, 0.24); }
+.closeout-check.warn { border-color: hsla(44, 70%, 56%, 0.24); }
+.closeout-check-name {
+  color: var(--vrts-gold); font-size: 0.68rem; font-weight: 900; text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+.closeout-check-text {
+  color: var(--vrts-text); font-size: 0.8rem; line-height: 1.3; font-weight: 700;
+}
+.closeout-check-badge {
+  color: var(--vrts-text-muted); font-size: 0.72rem; font-weight: 850;
+}
+.closeout-check.ok .closeout-check-badge { color: var(--color-positive); }
+.closeout-check.warn .closeout-check-badge { color: var(--vrts-gold); }
+.closeout-btn { width: 100%; margin-top: 0.8rem; }
+
 /* Baby Runway */
 .baby-runway { padding: 1.25rem; }
 .runway-grid {
