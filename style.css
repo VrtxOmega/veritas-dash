@@ -139,6 +139,47 @@ button.status-chip:hover, button.status-chip:active { border-color: var(--vrts-g
 .stat-pill .stat-value { font-size: 1.2rem; font-weight: 600; }
 .stat-value.highlight { color: var(--vrts-gold); }
 
+/* Run Timer */
+.run-timer { padding: 1.25rem; }
+.timer-face {
+  display: grid; gap: 0.25rem; place-items: center;
+  padding: 1rem; border-radius: 16px;
+  background: radial-gradient(circle at 50% 0%, hsla(44, 53%, 54%, 0.12), rgba(0,0,0,0.18));
+  border: 1px solid hsla(44, 70%, 56%, 0.18);
+}
+.timer-value {
+  font-family: var(--font-display); font-size: clamp(2rem, 14vw, 3rem);
+  line-height: 1; font-weight: 900; color: var(--vrts-text);
+  font-variant-numeric: tabular-nums; letter-spacing: 0;
+}
+.timer-sub {
+  color: var(--vrts-text-muted); font-size: 0.82rem; font-weight: 700;
+}
+.timer-controls {
+  display: grid; grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0.55rem; margin-top: 0.75rem;
+}
+.timer-btn {
+  min-height: 42px; border-radius: 12px; border: 1px solid var(--vrts-border);
+  font-family: var(--font-main); font-weight: 900; cursor: pointer;
+  transition: var(--transition); color: var(--vrts-text);
+}
+.timer-btn.primary {
+  background: linear-gradient(135deg, var(--vrts-gold), hsl(44, 53%, 44%));
+  border-color: var(--vrts-gold); color: var(--vrts-obsidian);
+}
+.timer-btn.secondary { background: rgba(255,255,255,0.055); }
+.timer-btn.ghost { background: rgba(0,0,0,0.18); color: var(--vrts-text-muted); }
+.timer-btn:hover, .timer-btn:active { transform: translateY(-1px); border-color: var(--vrts-gold); }
+.timer-btn:disabled {
+  opacity: 0.42; cursor: not-allowed; transform: none; border-color: var(--vrts-border);
+}
+.timer-btn[hidden] { display: none; }
+.timer-pace {
+  margin-top: 0.75rem; color: var(--vrts-text-muted); font-size: 0.82rem;
+  line-height: 1.4; overflow-wrap: anywhere;
+}
+
 /* Money Plan */
 .section-header.compact { margin-bottom: 1rem; }
 .section-kicker {

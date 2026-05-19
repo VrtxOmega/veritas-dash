@@ -80,6 +80,26 @@
           </div>
         </section>
 
+        <!-- Run Timer -->
+        <section class="run-timer glass-panel">
+          <div class="section-header compact">
+            <h2>Run Timer</h2>
+            <span class="section-kicker" id="runTimerStatus">Idle</span>
+          </div>
+          <div class="timer-face">
+            <span class="timer-value" id="runTimerElapsed">00:00:00</span>
+            <span class="timer-sub" id="runTimerStarted">Ready when you are.</span>
+          </div>
+          <div class="timer-controls">
+            <button type="button" class="timer-btn primary" id="btnTimerStart">Start</button>
+            <button type="button" class="timer-btn secondary" id="btnTimerPause" hidden>Pause</button>
+            <button type="button" class="timer-btn primary" id="btnTimerResume" hidden>Resume</button>
+            <button type="button" class="timer-btn secondary" id="btnTimerUse">Use Time</button>
+            <button type="button" class="timer-btn ghost" id="btnTimerReset">Reset</button>
+          </div>
+          <div class="timer-pace" id="runTimerPace">Start before a shift, then use the time when logging earnings.</div>
+        </section>
+
         <!-- Money Plan -->
         <section class="money-plan glass-panel">
           <div class="section-header compact">

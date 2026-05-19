@@ -10,6 +10,7 @@ class Dashboard {
 
     this.confettiTriggered = false;
     this.notesStatusTimeout = null;
+    this.timerInterval = null;
     this.deferredInstallPrompt = null;
     this.launchAction = new URLSearchParams(window.location.search).get('action');
     this.launchActionHandled = false;
@@ -23,6 +24,7 @@ class Dashboard {
     this.registerServiceWorker();
     this.maybeShowOnboarding();
     this.handleLaunchAction();
+    this.startTimerTicker();
   }
 
   createDefaultState() {
@@ -31,6 +33,12 @@ class Dashboard {
       weeklyLog: {},
       notes: '',
       care: { water: false, snack: false, charger: false, fuel: false, break: false },
+      timer: {
+        status: 'idle',
+        startedAt: '',
+        accumulatedMs: 0,
+        lastUsedHours: 0
+      },
       meta: {
         onboardingComplete: false,
         lastBackupAt: '',
@@ -58,6 +66,16 @@ class Dashboard {
 
   mergeState(saved) {
     const defaults = this.createDefaultState();
+    const timer = {
+      ...defaults.timer,
+      ...(saved.timer || {})
+    };
+    if (!['idle', 'running', 'paused'].includes(timer.status)) {
+      timer.status = 'idle';
+    }
+    timer.accumulatedMs = Math.max(0, Number(timer.accumulatedMs) || 0);
+    timer.lastUsedHours = Math.max(0, Number(timer.lastUsedHours) || 0);
+
     const config = {
       ...defaults.config,
       ...(saved.config || {}),
@@ -77,6 +95,7 @@ class Dashboard {
       transactions: Array.isArray(saved.transactions) ? saved.transactions : defaults.transactions,
       weeklyLog: saved.weeklyLog || defaults.weeklyLog,
       care: { ...defaults.care, ...(saved.care || {}) },
+      timer,
       meta: { ...defaults.meta, ...(saved.meta || {}) },
       config
     };
@@ -285,6 +304,15 @@ class Dashboard {
     this.dailyProgressText = document.getElementById('dailyProgressText');
     this.remainingToGoal = document.getElementById('remainingToGoal');
     this.dailyGoalDisplay = document.getElementById('dailyGoalDisplay');
+    this.runTimerStatus = document.getElementById('runTimerStatus');
+    this.runTimerElapsed = document.getElementById('runTimerElapsed');
+    this.runTimerStarted = document.getElementById('runTimerStarted');
+    this.runTimerPace = document.getElementById('runTimerPace');
+    this.btnTimerStart = document.getElementById('btnTimerStart');
+    this.btnTimerPause = document.getElementById('btnTimerPause');
+    this.btnTimerResume = document.getElementById('btnTimerResume');
+    this.btnTimerUse = document.getElementById('btnTimerUse');
+    this.btnTimerReset = document.getElementById('btnTimerReset');
     this.spendableCash = document.getElementById('spendableCash');
     this.taxReserve = document.getElementById('taxReserve');
     this.babyFund = document.getElementById('babyFund');
@@ -591,6 +619,139 @@ class Dashboard {
     };
   }
 
+  getRunTimerElapsedMs(now = Date.now()) {
+    const timer = this.state.timer || this.createDefaultState().timer;
+    let elapsed = Math.max(0, Number(timer.accumulatedMs) || 0);
+
+    if (timer.status === 'running' && timer.startedAt) {
+      const started = new Date(timer.startedAt).getTime();
+      if (!Number.isNaN(started)) {
+        elapsed += Math.max(0, now - started);
+      }
+    }
+
+    return elapsed;
+  }
+
+  formatTimerDuration(ms) {
+    const totalSeconds = Math.floor(Math.max(0, ms) / 1000);
+    const hours = Math.floor(totalSeconds / 3600);
+    const minutes = Math.floor((totalSeconds % 3600) / 60);
+    const seconds = totalSeconds % 60;
+    return [hours, minutes, seconds].map(value => String(value).padStart(2, '0')).join(':');
+  }
+
+  startRunTimer() {
+    this.state.timer = {
+      status: 'running',
+      startedAt: new Date().toISOString(),
+      accumulatedMs: 0,
+      lastUsedHours: this.state.timer?.lastUsedHours || 0
+    };
+    this.saveState();
+    this.showToast('Run timer started.');
+  }
+
+  pauseRunTimer() {
+    if (this.state.timer.status !== 'running') return;
+    this.state.timer.accumulatedMs = this.getRunTimerElapsedMs();
+    this.state.timer.startedAt = '';
+    this.state.timer.status = 'paused';
+    this.saveState();
+  }
+
+  resumeRunTimer() {
+    if (this.state.timer.status !== 'paused') return;
+    this.state.timer.startedAt = new Date().toISOString();
+    this.state.timer.status = 'running';
+    this.saveState();
+  }
+
+  resetRunTimer() {
+    const elapsed = this.getRunTimerElapsedMs();
+    if (elapsed > 60000 && !confirm('Reset the run timer?')) return;
+    this.state.timer = this.createDefaultState().timer;
+    this.saveState();
+    this.showToast('Run timer reset.');
+  }
+
+  useRunTimerHours() {
+    const elapsed = this.getRunTimerElapsedMs();
+    if (elapsed < 60000) {
+      this.showToast('Run timer needs at least one minute.', true);
+      return;
+    }
+
+    if (this.state.timer.status === 'running') {
+      this.state.timer.accumulatedMs = elapsed;
+      this.state.timer.startedAt = '';
+      this.state.timer.status = 'paused';
+    }
+
+    const hours = elapsed / 3600000;
+    this.state.timer.lastUsedHours = hours;
+    this.saveState();
+    this.activateEntryTab('earnings');
+    this.openModal(this.actionModal);
+    const hoursInput = document.getElementById('earningHours');
+    const descInput = document.getElementById('earningDesc');
+    if (hoursInput) {
+      hoursInput.value = hours.toFixed(2);
+    }
+    if (descInput && !descInput.value) {
+      descInput.value = 'Timed run';
+    }
+    this.showToast(`${hours.toFixed(2)} hr added to earning entry.`);
+  }
+
+  updateRunTimer() {
+    if (!this.runTimerElapsed) return;
+
+    const timer = this.state.timer || this.createDefaultState().timer;
+    const elapsed = this.getRunTimerElapsedMs();
+    const hours = elapsed / 3600000;
+    const f = new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' });
+    const statusText = timer.status === 'running' ? 'Running' : timer.status === 'paused' ? 'Paused' : 'Idle';
+
+    this.runTimerStatus.textContent = statusText;
+    this.runTimerElapsed.textContent = this.formatTimerDuration(elapsed);
+
+    if (timer.status === 'running' && timer.startedAt) {
+      const started = new Date(timer.startedAt).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' });
+      this.runTimerStarted.textContent = `Started ${started}`;
+    } else if (elapsed >= 60000) {
+      this.runTimerStarted.textContent = `${hours.toFixed(2)} hr captured`;
+    } else {
+      this.runTimerStarted.textContent = 'Ready when you are.';
+    }
+
+    const totals = this.getTodayTotals();
+    if (elapsed >= 60000 && totals.gross > 0) {
+      this.runTimerPace.textContent = `${f.format(totals.gross / Math.max(hours, 0.01))}/hr against logged gross.`;
+    } else if (elapsed >= 60000) {
+      this.runTimerPace.textContent = `${hours.toFixed(2)} hr ready to use in an earning entry.`;
+    } else {
+      this.runTimerPace.textContent = 'Start before a shift, then use the time when logging earnings.';
+    }
+
+    if (this.btnTimerStart) this.btnTimerStart.hidden = timer.status !== 'idle';
+    if (this.btnTimerPause) this.btnTimerPause.hidden = timer.status !== 'running';
+    if (this.btnTimerResume) this.btnTimerResume.hidden = timer.status !== 'paused';
+    if (this.btnTimerUse) this.btnTimerUse.disabled = elapsed < 60000;
+    if (this.btnTimerReset) this.btnTimerReset.disabled = elapsed < 1000 && timer.status === 'idle';
+  }
+
+  startTimerTicker() {
+    if (this.timerInterval) return;
+    this.updateRunTimer();
+    this.timerInterval = window.setInterval(() => this.updateRunTimer(), 1000);
+  }
+
+  activateEntryTab(tabName) {
+    this.tabBtns.forEach(btn => btn.classList.toggle('active', btn.dataset.tab === tabName));
+    this.tabContents.forEach(content => content.classList.toggle('active', content.id === `tab-${tabName}`));
+  }
+
   bindEvents() {
     const options = { weekday: 'long', month: 'long', day: 'numeric' };
     this.dateDisplay.textContent = new Date().toLocaleDateString(undefined, options);
@@ -635,6 +796,21 @@ class Dashboard {
       this.btnImportBackup.addEventListener('click', () => this.backupFileInput.click());
       this.backupFileInput.addEventListener('change', () => this.importBackupFile(this.backupFileInput.files[0]));
     }
+    if (this.btnTimerStart) {
+      this.btnTimerStart.addEventListener('click', () => this.startRunTimer());
+    }
+    if (this.btnTimerPause) {
+      this.btnTimerPause.addEventListener('click', () => this.pauseRunTimer());
+    }
+    if (this.btnTimerResume) {
+      this.btnTimerResume.addEventListener('click', () => this.resumeRunTimer());
+    }
+    if (this.btnTimerUse) {
+      this.btnTimerUse.addEventListener('click', () => this.useRunTimerHours());
+    }
+    if (this.btnTimerReset) {
+      this.btnTimerReset.addEventListener('click', () => this.resetRunTimer());
+    }
 
     if (this.onboardingForm) {
       this.onboardingForm.addEventListener('submit', (e) => {
@@ -662,12 +838,7 @@ class Dashboard {
 
     // Tab Logic
     this.tabBtns.forEach(btn => {
-      btn.addEventListener('click', (e) => {
-        this.tabBtns.forEach(b => b.classList.remove('active'));
-        this.tabContents.forEach(c => c.classList.remove('active'));
-        e.target.classList.add('active');
-        document.getElementById(`tab-${e.target.dataset.tab}`).classList.add('active');
-      });
+      btn.addEventListener('click', () => this.activateEntryTab(btn.dataset.tab));
     });
 
     // Quick Presets
@@ -1192,6 +1363,7 @@ class Dashboard {
     this.taxReserve.textContent = f.format(totals.taxReserve);
     this.babyFund.textContent = f.format(totals.babyFund);
     this.mileageDeduction.textContent = f.format(totals.mileageDeduction);
+    this.updateRunTimer();
 
     // Dynamic ring color based on progress
     const ring = this.progressRingFill;
