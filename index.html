@@ -127,6 +127,34 @@
           <div class="next-move" id="nextMoveText">Log your first run to build a plan.</div>
         </section>
 
+        <!-- Bill Shield -->
+        <section class="bill-shield glass-panel">
+          <div class="section-header compact">
+            <h2>Bill Shield</h2>
+            <span class="section-kicker" id="billShieldStatus">Set Bills</span>
+          </div>
+          <div class="shield-grid">
+            <div class="shield-cell protected">
+              <span class="shield-label">Protect 14d</span>
+              <span class="shield-value" id="billShieldProtected">$0.00</span>
+            </div>
+            <div class="shield-cell safe">
+              <span class="shield-label">Safe Spend</span>
+              <span class="shield-value" id="billShieldSafe">$0.00</span>
+            </div>
+            <div class="shield-cell">
+              <span class="shield-label">Next Due</span>
+              <span class="shield-value" id="billShieldNext">Set dates</span>
+            </div>
+            <div class="shield-cell">
+              <span class="shield-label">Paid</span>
+              <span class="shield-value" id="billShieldPaid">0/0</span>
+            </div>
+          </div>
+          <div class="bill-shield-list" id="billShieldList"></div>
+          <div class="next-move" id="billShieldText">Add monthly bills and due days in Settings.</div>
+        </section>
+
         <!-- Baby Runway -->
         <section class="baby-runway glass-panel">
           <div class="section-header compact">
@@ -724,22 +752,30 @@
           <div class="settings-divider">
             <span>📋 Monthly Fixed Bills</span>
           </div>
-          <div class="settings-grid">
-            <div class="input-group">
+          <div class="bill-settings-grid">
+            <div class="bill-setting-card">
               <label for="setRent">Rent / Mortgage</label>
               <input type="number" id="setRent" class="modern-input" step="0.01" min="0" placeholder="0.00" inputmode="decimal" />
+              <label for="setRentDue">Due Day</label>
+              <input type="number" id="setRentDue" class="modern-input" step="1" min="1" max="31" inputmode="numeric" />
             </div>
-            <div class="input-group">
+            <div class="bill-setting-card">
               <label for="setCar">Car Payment</label>
               <input type="number" id="setCar" class="modern-input" step="0.01" min="0" placeholder="0.00" inputmode="decimal" />
+              <label for="setCarDue">Due Day</label>
+              <input type="number" id="setCarDue" class="modern-input" step="1" min="1" max="31" inputmode="numeric" />
             </div>
-            <div class="input-group">
+            <div class="bill-setting-card">
               <label for="setInsurance">Insurance</label>
               <input type="number" id="setInsurance" class="modern-input" step="0.01" min="0" placeholder="0.00" inputmode="decimal" />
+              <label for="setInsuranceDue">Due Day</label>
+              <input type="number" id="setInsuranceDue" class="modern-input" step="1" min="1" max="31" inputmode="numeric" />
             </div>
-            <div class="input-group">
+            <div class="bill-setting-card">
               <label for="setUtilities">Utilities</label>
               <input type="number" id="setUtilities" class="modern-input" step="0.01" min="0" placeholder="0.00" inputmode="decimal" />
+              <label for="setUtilitiesDue">Due Day</label>
+              <input type="number" id="setUtilitiesDue" class="modern-input" step="1" min="1" max="31" inputmode="numeric" />
             </div>
           </div>
 

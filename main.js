@@ -39,6 +39,15 @@ class Dashboard {
         accumulatedMs: 0,
         lastUsedHours: 0
       },
+      billShield: {
+        dueDays: {
+          rent: 1,
+          car: 10,
+          insurance: 15,
+          utilities: 20
+        },
+        paid: {}
+      },
       meta: {
         onboardingComplete: false,
         lastBackupAt: '',
@@ -76,6 +85,22 @@ class Dashboard {
     timer.accumulatedMs = Math.max(0, Number(timer.accumulatedMs) || 0);
     timer.lastUsedHours = Math.max(0, Number(timer.lastUsedHours) || 0);
 
+    const billShield = {
+      ...defaults.billShield,
+      ...(saved.billShield || {}),
+      dueDays: {
+        ...defaults.billShield.dueDays,
+        ...((saved.billShield && saved.billShield.dueDays) || {})
+      },
+      paid: {}
+    };
+    Object.keys(billShield.dueDays).forEach(key => {
+      billShield.dueDays[key] = Math.max(1, Math.min(31, Math.round(Number(billShield.dueDays[key]) || defaults.billShield.dueDays[key] || 1)));
+    });
+    Object.entries((saved.billShield && saved.billShield.paid) || {}).forEach(([key, value]) => {
+      if (value === true) billShield.paid[key] = true;
+    });
+
     const config = {
       ...defaults.config,
       ...(saved.config || {}),
@@ -96,6 +121,7 @@ class Dashboard {
       weeklyLog: saved.weeklyLog || defaults.weeklyLog,
       care: { ...defaults.care, ...(saved.care || {}) },
       timer,
+      billShield,
       meta: { ...defaults.meta, ...(saved.meta || {}) },
       config
     };
@@ -318,6 +344,13 @@ class Dashboard {
     this.babyFund = document.getElementById('babyFund');
     this.mileageDeduction = document.getElementById('mileageDeduction');
     this.nextMoveText = document.getElementById('nextMoveText');
+    this.billShieldStatus = document.getElementById('billShieldStatus');
+    this.billShieldProtected = document.getElementById('billShieldProtected');
+    this.billShieldSafe = document.getElementById('billShieldSafe');
+    this.billShieldNext = document.getElementById('billShieldNext');
+    this.billShieldPaid = document.getElementById('billShieldPaid');
+    this.billShieldList = document.getElementById('billShieldList');
+    this.billShieldText = document.getElementById('billShieldText');
     this.careProgress = document.getElementById('careProgress');
     this.careBtns = document.querySelectorAll('.care-chip');
     this.grossEarnings = document.getElementById('grossEarnings');
@@ -412,6 +445,11 @@ class Dashboard {
     document.getElementById('setCar').value = mb.car || '';
     document.getElementById('setInsurance').value = mb.insurance || '';
     document.getElementById('setUtilities').value = mb.utilities || '';
+    const dueDays = this.state.billShield?.dueDays || this.createDefaultState().billShield.dueDays;
+    document.getElementById('setRentDue').value = dueDays.rent || 1;
+    document.getElementById('setCarDue').value = dueDays.car || 10;
+    document.getElementById('setInsuranceDue').value = dueDays.insurance || 15;
+    document.getElementById('setUtilitiesDue').value = dueDays.utilities || 20;
     this.updateComputedBillsDisplay();
   }
 
@@ -617,6 +655,177 @@ class Dashboard {
       weekBabyFund: this.getPeriodSummary('week').babyFund,
       note: (plan.note || '').trim()
     };
+  }
+
+  getBillCatalog() {
+    const monthlyBills = this.state.config.monthlyBills || {};
+    const dueDays = this.state.billShield?.dueDays || this.createDefaultState().billShield.dueDays;
+    const catalog = [
+      { id: 'rent', label: 'Rent', amount: Number(monthlyBills.rent) || 0, dueDay: dueDays.rent || 1 },
+      { id: 'car', label: 'Car', amount: Number(monthlyBills.car) || 0, dueDay: dueDays.car || 10 },
+      { id: 'insurance', label: 'Insurance', amount: Number(monthlyBills.insurance) || 0, dueDay: dueDays.insurance || 15 },
+      { id: 'utilities', label: 'Utilities', amount: Number(monthlyBills.utilities) || 0, dueDay: dueDays.utilities || 20 }
+    ];
+
+    return catalog
+      .filter(bill => bill.amount > 0)
+      .map(bill => ({
+        ...bill,
+        dueDay: Math.max(1, Math.min(31, Math.round(Number(bill.dueDay) || 1)))
+      }));
+  }
+
+  getBillPeriodKey(date) {
+    return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
+  }
+
+  getBillDueDate(year, monthIndex, dueDay) {
+    const lastDay = new Date(year, monthIndex + 1, 0).getDate();
+    const date = new Date(year, monthIndex, Math.min(dueDay, lastDay));
+    date.setHours(0, 0, 0, 0);
+    return date;
+  }
+
+  formatBillDueLabel(record) {
+    if (record.daysUntil < 0) return `${Math.abs(record.daysUntil)}d overdue`;
+    if (record.daysUntil === 0) return 'Today';
+    if (record.daysUntil === 1) return 'Tomorrow';
+    return record.dueDate.toLocaleDateString([], { month: 'short', day: 'numeric' });
+  }
+
+  getBillInstances() {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const paid = this.state.billShield?.paid || {};
+    const records = [];
+
+    this.getBillCatalog().forEach(bill => {
+      [0, 1].forEach(monthOffset => {
+        const date = this.getBillDueDate(today.getFullYear(), today.getMonth() + monthOffset, bill.dueDay);
+        const period = this.getBillPeriodKey(date);
+        const key = `${bill.id}:${period}`;
+        const daysUntil = Math.ceil((date - today) / 86400000);
+        records.push({
+          ...bill,
+          key,
+          period,
+          dueDate: date,
+          daysUntil,
+          paid: paid[key] === true
+        });
+      });
+    });
+
+    return records.sort((a, b) => a.dueDate - b.dueDate || a.label.localeCompare(b.label));
+  }
+
+  getBillShield() {
+    const records = this.getBillInstances();
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const currentPeriod = this.getBillPeriodKey(today);
+    const catalog = this.getBillCatalog();
+    const currentPaid = catalog.filter(bill => this.state.billShield?.paid?.[`${bill.id}:${currentPeriod}`]).length;
+    const protectionRecords = records.filter(record => !record.paid && record.daysUntil <= 14);
+    const protectedAmount = protectionRecords.reduce((sum, record) => sum + record.amount, 0);
+    const totals = this.getTodayTotals();
+    const safeSpend = Math.max(0, totals.spendable - protectedAmount);
+    const nextBill = records.find(record => !record.paid) || null;
+    const upcomingRecords = records
+      .filter(record => record.daysUntil <= 31 && (record.daysUntil >= 0 || !record.paid))
+      .slice(0, 5);
+
+    return {
+      catalog,
+      records,
+      upcomingRecords,
+      protectionRecords,
+      protectedAmount,
+      safeSpend,
+      needs: Math.max(0, protectedAmount - totals.spendable),
+      nextBill,
+      currentPaid,
+      currentTotal: catalog.length
+    };
+  }
+
+  toggleBillPaid(key) {
+    if (!key) return;
+    const paid = { ...(this.state.billShield?.paid || {}) };
+    if (paid[key]) {
+      delete paid[key];
+      this.showToast('Bill reopened.');
+    } else {
+      paid[key] = true;
+      this.showToast('Bill marked paid.');
+    }
+    this.state.billShield = {
+      ...this.createDefaultState().billShield,
+      ...(this.state.billShield || {}),
+      paid
+    };
+    this.saveState();
+  }
+
+  renderBillShieldList(records) {
+    if (!this.billShieldList) return;
+    const f = new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' });
+
+    if (!records.length) {
+      this.billShieldList.innerHTML = '<div class="bill-empty">No active bills yet. Add bill amounts and due days in Settings.</div>';
+      return;
+    }
+
+    this.billShieldList.innerHTML = records.map(record => {
+      const rowState = record.paid ? 'paid' : record.daysUntil < 0 ? 'overdue' : record.daysUntil <= 3 ? 'urgent' : '';
+      const status = record.paid ? 'Paid' : 'Mark Paid';
+      return `
+        <div class="bill-row ${rowState}">
+          <div>
+            <span class="bill-name">${record.label} · ${f.format(record.amount)}</span>
+            <span class="bill-meta">${this.formatBillDueLabel(record)} · due day ${record.dueDay}</span>
+          </div>
+          <button type="button" class="bill-pay-btn ${record.paid ? 'paid' : ''}" data-bill-key="${record.key}">${status}</button>
+        </div>
+      `;
+    }).join('');
+  }
+
+  updateBillShield() {
+    if (!this.billShieldStatus) return;
+    const shield = this.getBillShield();
+    const f = new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' });
+
+    this.billShieldProtected.textContent = f.format(shield.protectedAmount);
+    this.billShieldSafe.textContent = f.format(shield.safeSpend);
+    this.billShieldPaid.textContent = `${shield.currentPaid}/${shield.currentTotal}`;
+
+    if (!shield.currentTotal) {
+      this.billShieldStatus.textContent = 'Set Bills';
+      this.billShieldNext.textContent = 'Set dates';
+      this.billShieldText.textContent = 'Add monthly bills and due days in Settings.';
+      this.renderBillShieldList([]);
+      return;
+    }
+
+    if (shield.nextBill) {
+      this.billShieldNext.textContent = this.formatBillDueLabel(shield.nextBill);
+    } else {
+      this.billShieldNext.textContent = 'Covered';
+    }
+
+    if (shield.protectedAmount <= 0) {
+      this.billShieldStatus.textContent = 'Covered';
+      this.billShieldText.textContent = 'No unpaid bills due in the next 14 days.';
+    } else if (shield.needs > 0) {
+      this.billShieldStatus.textContent = 'Needs Runs';
+      this.billShieldText.textContent = `${f.format(shield.needs)} more needed before the next 14 days are protected.`;
+    } else {
+      this.billShieldStatus.textContent = 'Protected';
+      this.billShieldText.textContent = `${f.format(shield.safeSpend)} remains safe after unpaid bills due in 14 days.`;
+    }
+
+    this.renderBillShieldList(shield.upcomingRecords);
   }
 
   getRunTimerElapsedMs(now = Date.now()) {
@@ -835,6 +1044,13 @@ class Dashboard {
         this.saveState();
       });
     });
+    if (this.billShieldList) {
+      this.billShieldList.addEventListener('click', (event) => {
+        const button = event.target.closest('[data-bill-key]');
+        if (!button) return;
+        this.toggleBillPaid(button.dataset.billKey);
+      });
+    }
 
     // Tab Logic
     this.tabBtns.forEach(btn => {
@@ -940,6 +1156,16 @@ class Dashboard {
       const utilities = parseFloat(document.getElementById('setUtilities').value) || 0;
       this.state.config.monthlyBills = { rent, car, insurance, utilities };
       this.state.config.dailyBills = (rent + car + insurance + utilities) / 30;
+      this.state.billShield = {
+        ...this.createDefaultState().billShield,
+        ...(this.state.billShield || {}),
+        dueDays: {
+          rent: Math.max(1, Math.min(31, Math.round(parseFloat(document.getElementById('setRentDue').value) || 1))),
+          car: Math.max(1, Math.min(31, Math.round(parseFloat(document.getElementById('setCarDue').value) || 10))),
+          insurance: Math.max(1, Math.min(31, Math.round(parseFloat(document.getElementById('setInsuranceDue').value) || 15))),
+          utilities: Math.max(1, Math.min(31, Math.round(parseFloat(document.getElementById('setUtilitiesDue').value) || 20)))
+        }
+      };
       this.saveState();
       this.closeAllModals();
       this.showToast('Settings saved! ✅');
@@ -1181,6 +1407,7 @@ class Dashboard {
     const month = this.getPeriodSummary('month');
     const year = this.getPeriodSummary('year');
     const runway = this.getBabyRunway();
+    const shield = this.getBillShield();
     const summaryHeaders = ['Period', 'Gross', 'Expenses', 'Bills', 'Tax Reserve', 'Baby Fund', 'Take Home', 'Miles', 'Mileage Deduction', 'Hours', 'Runs'];
     const summaryRow = (label, data) => [
       label,
@@ -1214,6 +1441,22 @@ class Dashboard {
     rows.push(['Weeks Left', runway.weeksLeft === null ? '' : runway.weeksLeft.toFixed(1)]);
     rows.push(['Weekly Need', runway.weeklyNeed.toFixed(2)]);
     rows.push(['Readiness Note', runway.note]);
+    rows.push([]);
+    rows.push(['Bill Shield']);
+    rows.push(['Protected Next 14 Days', shield.protectedAmount.toFixed(2)]);
+    rows.push(['Safe Spend', shield.safeSpend.toFixed(2)]);
+    rows.push(['Paid This Month', `${shield.currentPaid}/${shield.currentTotal}`]);
+    rows.push(['Next Due', shield.nextBill ? `${shield.nextBill.label} ${this.formatBillDueLabel(shield.nextBill)}` : '']);
+    rows.push(['Bill', 'Due Date', 'Due Label', 'Amount', 'Status']);
+    shield.upcomingRecords.forEach(record => {
+      rows.push([
+        record.label,
+        this.getDateKey(record.dueDate),
+        this.formatBillDueLabel(record),
+        record.amount.toFixed(2),
+        record.paid ? 'Paid' : 'Unpaid'
+      ]);
+    });
     rows.push([]);
     rows.push(['Archived Days']);
     rows.push(['Date', ...summaryHeaders.slice(1)]);
@@ -1389,6 +1632,7 @@ class Dashboard {
     this.updateSmartInsight(totals.takeHome, remaining, progressPercent, totals.gross);
     this.updateNextMove(totals, remaining);
     this.renderCareChecklist();
+    this.updateBillShield();
 
     // Weekly
     this.updateWeeklyProgress();

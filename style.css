@@ -219,6 +219,61 @@ button.status-chip:hover, button.status-chip:active { border-color: var(--vrts-g
   color: var(--vrts-text-muted); font-size: 0.84rem;
 }
 
+/* Bill Shield */
+.bill-shield { padding: 1.25rem; }
+.shield-grid {
+  display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0.6rem;
+}
+.shield-cell {
+  min-height: 82px; padding: 0.8rem; border-radius: 14px;
+  background: rgba(255,255,255,0.04); border: 1px solid var(--vrts-border);
+}
+.shield-cell.protected { border-color: hsla(44, 70%, 56%, 0.32); }
+.shield-cell.safe { border-color: hsla(150, 70%, 45%, 0.32); }
+.shield-label {
+  display: block; color: var(--vrts-text-muted); font-size: 0.68rem;
+  text-transform: uppercase; letter-spacing: 0.04em; font-weight: 800; margin-bottom: 0.35rem;
+}
+.shield-value {
+  display: block; font-family: var(--font-display); font-weight: 800;
+  font-size: clamp(0.95rem, 6vw, 1.35rem); color: var(--vrts-text);
+  overflow-wrap: anywhere;
+}
+.shield-cell.protected .shield-value { color: var(--vrts-gold); }
+.shield-cell.safe .shield-value { color: var(--color-positive); }
+.bill-shield-list {
+  display: grid; gap: 0.55rem; margin-top: 0.8rem;
+}
+.bill-row {
+  display: grid; grid-template-columns: 1fr auto; gap: 0.7rem; align-items: center;
+  min-height: 56px; padding: 0.72rem; border-radius: 14px;
+  background: rgba(0,0,0,0.16); border: 1px solid rgba(255,255,255,0.07);
+}
+.bill-row.paid { opacity: 0.72; border-color: hsla(150, 70%, 45%, 0.22); }
+.bill-row.urgent { border-color: hsla(44, 70%, 56%, 0.34); }
+.bill-row.overdue { border-color: hsla(350, 70%, 55%, 0.36); }
+.bill-name {
+  display: block; color: var(--vrts-text); font-weight: 800; font-size: 0.86rem;
+}
+.bill-meta {
+  display: block; color: var(--vrts-text-muted); font-size: 0.72rem; line-height: 1.35;
+}
+.bill-pay-btn {
+  min-width: 84px; min-height: 36px; border-radius: 999px; border: 1px solid var(--vrts-border);
+  background: rgba(255,255,255,0.055); color: var(--vrts-text); font-family: var(--font-main);
+  font-weight: 850; font-size: 0.72rem; cursor: pointer; transition: var(--transition);
+}
+.bill-pay-btn.paid {
+  color: var(--color-positive); border-color: hsla(150, 70%, 45%, 0.42);
+  background: hsla(150, 70%, 45%, 0.12);
+}
+.bill-pay-btn:hover, .bill-pay-btn:active { border-color: var(--vrts-gold); color: var(--vrts-gold); }
+.bill-empty {
+  padding: 0.8rem 0.9rem; border-radius: 12px; background: rgba(0,0,0,0.16);
+  border: 1px solid rgba(255,255,255,0.07); color: var(--vrts-text-muted);
+  font-size: 0.82rem; line-height: 1.4;
+}
+
 /* Baby Runway */
 .baby-runway { padding: 1.25rem; }
 .runway-grid {
@@ -584,6 +639,15 @@ select.modern-input { appearance: none; cursor: pointer; }
 
 /* Settings */
 .settings-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 0.75rem; }
+.bill-settings-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 0.75rem; }
+.bill-setting-card {
+  display: grid; gap: 0.45rem; padding: 0.75rem; border-radius: 14px;
+  background: rgba(255,255,255,0.035); border: 1px solid var(--vrts-border);
+}
+.bill-setting-card label {
+  display: block; font-size: 0.76rem; color: var(--vrts-text-muted); font-weight: 700;
+}
+.bill-setting-card label:not(:first-child) { margin-top: 0.15rem; }
 .settings-divider {
   display: flex; align-items: center; gap: 0.75rem; margin: 0.5rem 0;
   font-size: 0.85rem; color: var(--vrts-text-muted); font-weight: 500;
@@ -661,6 +725,7 @@ select.modern-input { appearance: none; cursor: pointer; }
   .top-nav { padding: 1rem 1rem; }
   .status-rail, .dashboard-content { padding-left: 1rem; padding-right: 1rem; }
   .settings-grid { grid-template-columns: 1fr; }
+  .bill-settings-grid { grid-template-columns: 1fr; }
   .onboarding-sheet { padding-left: 1rem; padding-right: 1rem; }
   .onboarding-grid { gap: 0.55rem; }
   .onboarding-sheet .modern-input { padding: 0.72rem; }

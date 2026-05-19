@@ -37,6 +37,7 @@ Veritas Dash is a static PWA that runs entirely in the browser and stores data i
 - Miles/hours tracking for better hourly and deduction visibility
 - First-run quick setup for daily target, weekly target, tax reserve, baby-fund rate, fixed bills, and mileage rate
 - Local run timer for capturing shift duration and prefilling earning-entry hours
+- Bill Shield for due-date visibility, paid/unpaid flags, and next-14-day safe-spend guidance
 - Weekly command view for take-home pace, remaining goal, runs left, reserves, miles, and hours
 - Weekly coach prompts for pace, next run target, and reserve protection
 - Baby Runway for due-date countdown, saved-so-far, remaining target, and weekly savings pace
@@ -58,6 +59,7 @@ Veritas Dash is a static PWA that runs entirely in the browser and stores data i
 | Tax + Baby Fund Planner | Calculates reserve and savings buckets from configured percentages |
 | Mileage + Hours | Tracks miles, mileage deduction estimate, and hourly pace |
 | Run Timer | Tracks local elapsed shift time and prefills earning-entry hours on demand |
+| Bill Shield | Shows upcoming fixed bills, due days, paid status, and safe spend after 14-day protection |
 | First-Run Setup | Opens a quick local setup sheet for the numbers that drive the dashboard |
 | Week Command | Shows weekly take-home, remaining goal, estimated runs left, reserve total, miles, and hours |
 | Weekly Coach | Turns weekly pace into concrete daily and run-count guidance |
@@ -119,6 +121,7 @@ npx serve .
 | Expense | localStorage | id, date, amount, category, note |
 | Goal | localStorage | dailyTarget, weeklyTarget, hourlyTarget, currency |
 | Timer | localStorage | status, startedAt, accumulatedMs, lastUsedHours |
+| Bill Shield | localStorage | dueDays, paid |
 | Settings | localStorage | taxRate, babyFundRate, mileageRate, fixedBills, babyPlan |
 | Care Check | localStorage | water, snack, charger, fuel, breakPlan |
 
@@ -148,6 +151,7 @@ npx serve .
 | Data Vault JSON export/import | Complete |
 | Baby Runway countdown + savings pace | Complete |
 | Run Timer with hours prefill | Complete |
+| Bill Shield due-date protection | Complete |
 | Multi-currency support | Planned |
 | Deeper tax export presets | Planned |
 | ShiftForge integration (scheduling + earnings) | Planned |
